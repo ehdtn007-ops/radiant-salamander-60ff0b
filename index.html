@@ -83,6 +83,7 @@ select:hover,select:focus{border-color:var(--accent)}
 /* ═══ 핀 스타일 ═══ */
 .cpin{position:relative;cursor:pointer;transform:translateY(-100%)}
 .cpin-bub{font-size:17px;font-weight:800;padding:8px 15px;border-radius:22px;white-space:nowrap;position:relative;transition:filter .15s;box-shadow:0 4px 18px rgba(0,0,0,.45);text-align:center;line-height:1.6}
+.cpin-bub .pin-tot{color:#ff4444;font-size:20px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.5);display:block}
 .cpin-bub::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom:none}
 /* 고시원 매매 — 보라 배경 + 노란 글자 */
 .cpin-bub.gs{background:#a855f7;color:#fff700}.cpin-bub.gs::after{border-top-color:#a855f7}
@@ -644,7 +645,7 @@ function pinLbl(item){
   const m=item.type==='고시원'?'🏠':'🏨';
   if(item.deal==='월세'){
     const dep=item.deposit||0,mon=item.monthly||0,tot=dep+(item.keymoney||0);
-    return `${m} 보${wonShort(dep)}<br>월${wonShort(mon)}<br><span class="pin-tot" style="color:#ff4444;font-size:20px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.5)">합${wonShort(tot)}</span>`;
+    return `${m} 보${wonShort(dep)}<br>월${wonShort(mon)}<br><span class="pin-tot">합${wonShort(tot)}</span>`;
   }
   const v=item.price||0;
   if(v>=10000){const a=Math.floor(v/10000),r=v%10000;return `${m} ${a}억${r?Math.round(r/1000)+'천':''}`;}
@@ -687,11 +688,9 @@ function updatePinFontSize(){
   const lv=kakaoMap.getLevel();
   const fs=getPinFontSize(lv);
   const ts=getTotFontSize(lv);
-  // 일반 핀 버블
   document.querySelectorAll('.cpin-bub').forEach(el=>{
     el.style.fontSize=fs+'px';
   });
-  // 합계 span
   document.querySelectorAll('.cpin-bub .pin-tot').forEach(el=>{
     el.style.fontSize=ts+'px';
   });
