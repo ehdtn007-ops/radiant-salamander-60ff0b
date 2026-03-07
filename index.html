@@ -84,6 +84,20 @@ select:hover,select:focus{border-color:var(--accent)}
 .cpin{position:relative;cursor:pointer;transform:translateY(-100%)}
 .cpin-bub{font-size:18px;font-weight:800;padding:8px 15px;border-radius:22px;white-space:nowrap;position:relative;transition:filter .15s,font-size .15s;box-shadow:0 4px 18px rgba(0,0,0,.45);text-align:center;line-height:1.6}
 .cpin-bub .pin-tot{color:#ff4444;font-size:18px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.5);display:block}
+/* 클러스터 핀 */
+.cpin-cluster{cursor:pointer;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.cpin-cluster .cluster-bub{background:linear-gradient(135deg,#ff6b35,#f7c948);border-radius:50%;width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.35);transition:transform .15s}
+.cpin-cluster.active .cluster-bub,.cpin-cluster:hover .cluster-bub{transform:scale(1.15)}
+.cluster-cnt{font-size:22px;font-weight:900;color:#1a1d27;line-height:1}
+.cluster-label{font-size:10px;font-weight:700;color:#1a1d27;opacity:.8}
+.cpin-cluster::after{content:'';display:block;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #f7c948;margin:0 auto}
+/* 클러스터 팝업 */
+.cl-popup{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;min-width:260px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;margin-bottom:8px}
+.cl-popup-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 10px;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+.cl-popup-body{max-height:320px;overflow-y:auto;padding:10px 12px}
+.cl-row{padding:6px 0}
+.cl-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;width:100%}
+.cl-btn:hover{opacity:.85}
 .cpin-bub::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom:none}
 /* 고시원 매매 — 보라 배경 + 노란 글자 */
 .cpin-bub.gs{background:#a855f7;color:#fff700}.cpin-bub.gs::after{border-top-color:#a855f7}
@@ -857,21 +871,108 @@ function render(){
 
   if(!kakaoMap)return;
   overlays.forEach(o=>o.setMap(null));overlays=[];
+
+  // 같은 위치(동) 기준으로 클러스터링
+  const coordMap={};
+  let pending=items.length;
+  let rendered=false;
+  if(!pending){updatePinFontSize();return;}
+
   items.forEach(item=>{
     getLatLng(item.prov||'서울',item.area,item.dong||'',(lat,lng)=>{
+      const key=lat.toFixed(4)+'_'+lng.toFixed(4);
+      if(!coordMap[key])coordMap[key]={lat,lng,items:[]};
+      coordMap[key].items.push(item);
+      pending--;
+      if(pending===0&&!rendered){rendered=true;renderPins(coordMap);}
+    });
+  });
+}
+
+function renderPins(coordMap){
+  overlays.forEach(o=>o.setMap(null));overlays=[];
+  Object.values(coordMap).forEach(group=>{
+    const {lat,lng,items}=group;
+    if(items.length===1){
+      // 단일 핀
+      const item=items[0];
       const pc=pinClass(item),lbl=pinLbl(item);
       const content=`<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}"><div class="cpin-bub ${pc}">${lbl}</div></div>`;
       const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:activeId===item.lid?20:10});
       ov.setMap(kakaoMap);overlays.push(ov);
       setTimeout(()=>{
         const el=document.getElementById('pin-'+item.lid);
-        if(el){
-          el.addEventListener('click',()=>{activeId=item.lid;activePopupItem=item;render();showPopup(item);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));const card=document.getElementById('card-'+item.lid);if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});});
-        }
+        if(el)el.addEventListener('click',()=>{activeId=item.lid;activePopupItem=item;closeClusterPopup();render();showPopup(item);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));const card=document.getElementById('card-'+item.lid);if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});});
         updatePinFontSize();
       },100);
-    });
+    } else {
+      // 클러스터 핀
+      const clKey='cl_'+lat.toFixed(4)+'_'+lng.toFixed(4);
+      const hasActive=items.some(i=>i.lid===activeId);
+      const content=`<div class="cpin-cluster${hasActive?' active':''}" id="${clKey}">
+        <div class="cluster-bub">
+          <div class="cluster-cnt">${items.length}</div>
+          <div class="cluster-label">매물</div>
+        </div>
+      </div>`;
+      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:hasActive?20:15});
+      ov.setMap(kakaoMap);overlays.push(ov);
+      setTimeout(()=>{
+        const el=document.getElementById(clKey);
+        if(el)el.addEventListener('click',()=>showClusterPopup(items,lat,lng));
+        updatePinFontSize();
+      },100);
+    }
   });
+}
+
+// ────────────────────────────────────
+// 클러스터 팝업
+// ────────────────────────────────────
+let clusterOverlay=null;
+function showClusterPopup(items,lat,lng){
+  closeClusterPopup();
+  const rows=items.map(item=>{
+    const isRent=item.deal==='월세';
+    const tot=isRent?(item.deposit||0)+(item.keymoney||0):0;
+    const priceStr=isRent
+      ?`보${wonShort(item.deposit)} / 월${wonShort(item.monthly||0)} <span style="color:#ff4444;font-weight:800">합${wonShort(tot)}</span>`
+      :wonShort(item.price);
+    const pc=pinClass(item);
+    return `<div class="cl-row" id="clrow-${item.lid}">
+      <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px">
+        <span class="dtag ${item.type}" style="font-size:10px">${item.type}</span>
+        <span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span>
+        <span style="font-size:12px;font-weight:800;flex:1">${item.name}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:5px">${priceStr}</div>
+      <button class="cl-btn" onclick="selectClusterItem('${item.lid}')">상세보기 →</button>
+    </div>`;
+  }).join('<div style="height:1px;background:rgba(255,255,255,.08);margin:6px 0"></div>');
+
+  const html=`<div class="cl-popup" id="cl-popup-box">
+    <div class="cl-popup-header">
+      <span>📍 매물 ${items.length}건</span>
+      <button onclick="closeClusterPopup()" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:0 2px">✕</button>
+    </div>
+    <div class="cl-popup-body">${rows}</div>
+  </div>`;
+  clusterOverlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:html,yAnchor:1.1,zIndex:30});
+  clusterOverlay.setMap(kakaoMap);
+  window._clusterItems=items;window._clusterLat=lat;window._clusterLng=lng;
+}
+function closeClusterPopup(){
+  if(clusterOverlay){clusterOverlay.setMap(null);clusterOverlay=null;}
+}
+function selectClusterItem(lid){
+  const all=buildAll();
+  const item=all.find(i=>i.lid===lid);
+  if(!item)return;
+  closeClusterPopup();
+  activeId=lid;activePopupItem=item;
+  render();showPopup(item);
+  const card=document.getElementById('card-'+lid);
+  if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ════════════════════════════════════════════
