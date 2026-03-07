@@ -99,8 +99,8 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;height:54px;backg
 }
 /* ═══ 게시판 뷰 ═══ */
 #board-view{
-  display:none;flex:1;flex-direction:column;
-  overflow-y:auto;background:var(--bg);
+  display:none;flex:1;
+  overflow-y:auto;overflow-x:hidden;background:var(--bg);
   padding:20px;
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
   -webkit-overflow-scrolling:touch;
@@ -251,11 +251,13 @@ select:hover,select:focus{border-color:var(--accent)}
 /* 담당자 */
 .dpop-agent-block{padding:14px 18px}
 .agent-card{background:var(--surface2);border-radius:12px;border:1px solid var(--border);padding:12px 14px}
+.agent-card-link{cursor:pointer;transition:background .15s,border-color .15s}
+.agent-card-link:hover{background:rgba(62,207,142,.08);border-color:rgba(62,207,142,.4)}
 .agent-card-title{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px}
 .agent-body{display:flex;align-items:center;gap:10px}
 .agent-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0}
-.agent-name{font-size:13px;font-weight:700;margin-bottom:2px}
 .agent-role{font-size:11px;color:var(--text2);margin-bottom:3px}
+.agent-name{font-size:13px;font-weight:700;margin-bottom:2px;color:#fff}
 .agent-phone{font-size:13px;font-weight:700;color:var(--green)}
 
 /* ═══ 우측 패널 ═══ */
@@ -327,8 +329,16 @@ select:hover,select:focus{border-color:var(--accent)}
   .main{flex-direction:column}
   #map-wrap{flex:none;height:45vh;width:100%}
   .panel{width:100%;height:55vh;border-left:none;border-top:1px solid var(--border);flex-shrink:0}
-  .dpop{bottom:0;left:0;right:0;transform:translateY(20px);width:100%;border-radius:18px 18px 0 0;max-height:82vh;z-index:200}
-  .dpop.show{transform:translateY(0);pointer-events:all}
+  .dpop{
+    position:fixed!important;
+    bottom:0;left:0;right:0;
+    width:100%;
+    transform:translateY(100%)!important;
+    border-radius:18px 18px 0 0;
+    max-height:85dvh;
+    z-index:500!important;
+  }
+  .dpop.show{transform:translateY(0)!important;pointer-events:all}
   .legend{top:8px;left:8px;padding:7px 10px;gap:4px}
   .li{font-size:10px}
   .modal{width:96vw!important;padding:22px 16px;max-height:92vh;overflow-y:auto}
@@ -390,8 +400,16 @@ select:hover,select:focus{border-color:var(--accent)}
   .main{flex-direction:row}
   #map-wrap{flex:1;height:100%}
   .panel{width:280px;height:100%;border-left:1px solid var(--border);border-top:none;flex-shrink:0}
-  .dpop{bottom:0;left:0;right:0;width:100%;border-radius:18px 18px 0 0;max-height:88vh;z-index:200}
-  .dpop.show{transform:translateY(0);pointer-events:all}
+  .dpop{
+    position:fixed!important;
+    bottom:0;left:0;right:0;
+    width:100%;
+    transform:translateY(100%)!important;
+    border-radius:18px 18px 0 0;
+    max-height:88vh;
+    z-index:500!important;
+  }
+  .dpop.show{transform:translateY(0)!important;pointer-events:all}
   .abc-banner{margin:3px 6px 2px;padding:3px 8px;border-radius:8px}
   .abc-banner-top{margin-bottom:1px;gap:4px}
   .abc-banner-title{font-size:9px}
@@ -564,6 +582,32 @@ select:hover,select:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<!-- ═══ 회원 수정 모달 ═══ -->
+<div class="overlay hidden" id="ov-edit-user">
+  <div class="modal" style="width:420px">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">✏️ 회원 정보 수정</div>
+    <div class="modal-sub" id="edit-user-sub"></div>
+    <div class="fg"><label class="fl">이름</label><input class="fi" id="eu-name" placeholder="이름"></div>
+    <div class="fg"><label class="fl">연락처</label><input class="fi" id="eu-phone" placeholder="010-0000-0000"></div>
+    <div class="fg"><label class="fl">중개사 등록번호</label><input class="fi" id="eu-license" placeholder="등록번호 (없으면 비워두세요)"></div>
+    <div class="fg"><label class="fl">비밀번호 변경 <span style="color:var(--text3);font-weight:400;text-transform:none">(비워두면 유지)</span></label><input class="fi" id="eu-pw" type="password" placeholder="새 비밀번호"></div>
+    <div class="fg">
+      <label class="fl">계정 상태</label>
+      <select class="fi" id="eu-status">
+        <option value="active">활성</option>
+        <option value="pending">승인대기</option>
+        <option value="blocked">차단</option>
+      </select>
+    </div>
+    <div id="eu-err" class="err"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" style="flex:1" onclick="closeAll();show('ov-admin')">취소</button>
+      <button class="btn btn-accent" style="flex:2" onclick="doEditUser()">✅ 저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 헤더 ═══ -->
 <header>
   <button class="hbtn" id="login-trigger" onclick="show('ov-login')">로그인</button>
@@ -713,6 +757,24 @@ select:hover,select:focus{border-color:var(--accent)}
 </div>
 
 <script>
+// ════════════════════════════════════════════
+// 뒤로가기 → 열린 팝업/모달 닫기
+// ════════════════════════════════════════════
+function pushPopupHistory(id){
+  history.pushState({popup:id},'','');
+}
+window.addEventListener('popstate',(e)=>{
+  // 게시판 상세 모달
+  const bdOverlay=document.getElementById('bd-overlay');
+  if(bdOverlay){closeBoardDetail();return;}
+  // 매물/사무소 상세 팝업
+  if(document.getElementById('dpop').classList.contains('show')){closePopup();return;}
+  // 클러스터 팝업
+  if(typeof clusterOverlay!=='undefined'&&clusterOverlay){closeClusterPopup();render();return;}
+  // 오버레이 모달 (로그인/회원가입 등)
+  const openModal=document.querySelector('.overlay:not(.hidden)');
+  if(openModal){openModal.classList.add('hidden');return;}
+});
 // ════════════════════════════════════════════
 // 전국 지역 데이터
 // ════════════════════════════════════════════
@@ -972,20 +1034,13 @@ function showABCPopup(){
   document.getElementById('dp-agent').innerHTML='';
   document.getElementById('dpop-fav').style.visibility='hidden';
   document.getElementById('dpop').classList.add('show');
-  // 모바일: 패널 숨기고 dpop fixed로 전환
+  pushPopupHistory('dpop');
+  // 모바일: 패널 숨기고 map-wrap 확장
   if(isMobileDevice()){
     const panelEl=document.querySelector('.panel');
     if(panelEl)panelEl.style.display='none';
     const mapWrap=document.getElementById('map-wrap');
     if(mapWrap){mapWrap.style.flex='1';mapWrap.style.height='100%';}
-    const dpop=document.getElementById('dpop');
-    dpop.style.position='fixed';
-    dpop.style.bottom='0';
-    dpop.style.left='0';
-    dpop.style.right='0';
-    dpop.style.width='100%';
-    dpop.style.maxHeight='85dvh';
-    dpop.style.zIndex='500';
   }
 }
 function focusABC(){
@@ -1067,7 +1122,7 @@ function switchView(v){
     activeId=null;activePopupItem=null;
     mapWrapEl.style.display='none';
     if(panelEl)panelEl.style.display='none';
-    boardEl.style.display='flex';
+    boardEl.style.display='block';
     renderBoard();
   }
 }
@@ -1150,14 +1205,19 @@ function showBoardDetail(item){
     <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
   </div>`;
 
-  // 담당자
-  let agentHtml='';
+  // 담당자 정보
+  let ownerPhone='', agentCardHtml='';
   if(item.ownerId){
     const owner=users.find(u=>u.id===item.ownerId);
-    if(owner) agentHtml=`<div class="agent-card"><div class="agent-card-title">📞 담당 공인중개사</div><div class="agent-body"><div class="agent-avatar">${owner.name[0]}</div><div><div class="agent-name">${owner.name}</div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><a class="agent-phone" href="tel:${owner.phone}" style="text-decoration:none;display:block">${owner.phone} 📲</a></div></div></div>`;
+    if(owner){
+      ownerPhone=owner.phone||'';
+      agentCardHtml=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
+    }
   } else {
-    agentHtml=`<div class="agent-card" style="text-align:center;color:var(--text2);font-size:12px;padding:14px">문의: 관리자에게 연락하세요</div>`;
+    ownerPhone='02-6404-5455';
+    agentCardHtml=`<a href="tel:02-6404-5455" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">공인중개사</div><div class="agent-name">첫번째공인중개사무소</div><div class="agent-phone">02-6404-5455</div></div></div></a>`;
   }
+  const callBtnHtml='';
 
   const html=`
     <div class="overlay" id="bd-overlay" onclick="if(event.target===this)closeBoardDetail()" style="z-index:650">
@@ -1200,10 +1260,10 @@ function showBoardDetail(item){
           </table>
         </div>
         <!-- 담당자 -->
-        <div class="dpop-agent-block">${agentHtml}</div>
+        <div class="dpop-agent-block">${agentCardHtml}</div>
         <!-- 지도에서 보기 버튼 -->
         <div style="padding:14px 18px">
-          <button onclick="closeBoardDetail();switchView('map');activeId='${item.lid}';activePopupItem=${JSON.stringify(item).replace(/'/g,"&#39;")};setTimeout(()=>{render();showPopup(${JSON.stringify(item).replace(/'/g,"&#39;")});},150)"
+          <button id="bd-map-btn"
             style="width:100%;background:rgba(79,140,255,.12);border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">
             🗺️ 지도에서 위치 보기
           </button>
@@ -1211,6 +1271,17 @@ function showBoardDetail(item){
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
+  pushPopupHistory('board-detail');
+  // 지도에서 보기 버튼 - 클로저로 item 안전 참조
+  const mapBtn=document.getElementById('bd-map-btn');
+  if(mapBtn){
+    mapBtn.addEventListener('click',()=>{
+      closeBoardDetail();
+      switchView('map');
+      activeId=item.lid;activePopupItem=item;
+      setTimeout(()=>{render();showPopup(item);},150);
+    });
+  }
 }
 function closeBoardDetail(){
   const el=document.getElementById('bd-overlay');
@@ -1443,10 +1514,11 @@ function showClusterPopup(items,lat,lng){
     }
   },50);
   window._clusterItems=items;window._clusterLat=lat;window._clusterLng=lng;
+  pushPopupHistory('cluster');
 }
 function closeClusterPopup(){
   if(clusterOverlay){clusterOverlay.setMap(null);clusterOverlay=null;}
-  // 클러스터 필터 해제 시 리스트 원래대로 (단 mapBoundsFilter는 유지)
+  clusterFilterIds=null;
 }
 function selectClusterItem(lid){
   const all=buildAll();
@@ -1595,45 +1667,38 @@ function showPopup(item){
       <tr><td>위반건축물</td><td style="${(item.illegal==='위반건축물')?'color:var(--red);font-weight:700':''}">${item.illegal||'해당없음'}</td></tr>
     </table>`;
 
-  // ── 담당자 ──
+  // ── 담당자 칸 (전화 아이콘 + 전체 클릭 링크) ──
   const ag=document.getElementById('dp-agent');
   if(item.ownerId){
     const owner=users.find(u=>u.id===item.ownerId);
     if(owner){
-      ag.innerHTML=`<div class="agent-card"><div class="agent-card-title">📞 담당 공인중개사</div><div class="agent-body"><div class="agent-avatar">${owner.name[0]}</div><div><div class="agent-name">${owner.name}</div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><a class="agent-phone" href="tel:${owner.phone}" style="text-decoration:none;display:block">${owner.phone} 📲</a></div></div></div>`;
+      ag.innerHTML=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
     } else ag.innerHTML='';
   } else {
-    ag.innerHTML=`<div class="agent-card" style="text-align:center;color:var(--text2);font-size:12px;padding:14px">문의: 관리자에게 연락하세요</div>`;
+    ag.innerHTML=`<a href="tel:02-6404-5455" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">공인중개사</div><div class="agent-name">첫번째공인중개사무소</div><div class="agent-phone">02-6404-5455</div></div></div></a>`;
   }
+  // dp-call-btn 초기화 (헤더에서 제거됨, 안전하게 비워두기)
+  const cb=document.getElementById('dp-call-btn');
+  if(cb)cb.innerHTML='';
 
   document.getElementById('dpop').classList.add('show');
-  // 모바일: 팝업 열릴 때 패널 숨기고 dpop fixed로 전환
+  pushPopupHistory('dpop');
+  // 모바일: 패널 숨기고 map-wrap 확장
   if(isMobileDevice()){
     const panelEl=document.querySelector('.panel');
     if(panelEl)panelEl.style.display='none';
     const mapWrap=document.getElementById('map-wrap');
     if(mapWrap){mapWrap.style.flex='1';mapWrap.style.height='100%';}
-    const dpop=document.getElementById('dpop');
-    dpop.style.position='fixed';
-    dpop.style.bottom='0';
-    dpop.style.left='0';
-    dpop.style.right='0';
-    dpop.style.width='100%';
-    dpop.style.maxHeight='85dvh';
-    dpop.style.zIndex='500';
   }
 }
 function isMobileDevice(){
-  // 세로/가로 모두 포함: 실제 터치 디바이스 여부로 판단
-  return window.matchMedia('(max-width:1024px) and (pointer:coarse)').matches || window.innerWidth<=768;
+  // 터치 디바이스이면서 화면이 1024px 이하인 경우만 모바일로 판단
+  const isTouch='ontouchstart' in window || navigator.maxTouchPoints>0;
+  return isTouch && window.innerWidth<=1024;
 }
 function closePopup(){
   document.getElementById('dpop').classList.remove('show');
   activeId=null;activePopupItem=null;clusterFilterIds=null;
-  // dpop position 원복
-  const dpop=document.getElementById('dpop');
-  dpop.style.position='';dpop.style.bottom='';dpop.style.left='';
-  dpop.style.right='';dpop.style.width='';dpop.style.maxHeight='';dpop.style.zIndex='';
   // 모바일: 패널 다시 보이기 (지도 뷰일 때만)
   if(isMobileDevice()&&currentView==='map'){
     const panelEl=document.querySelector('.panel');
@@ -1643,7 +1708,9 @@ function closePopup(){
   }
   render();
 }
-function closePopupSilent(){document.getElementById('dpop').classList.remove('show');}
+function closePopupSilent(){
+  document.getElementById('dpop').classList.remove('show');
+}
 
 ['ff-type','ff-deal','ff-price','ff-period','ff-rooms'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();}));
 document.getElementById('ff-area').addEventListener('change',()=>{updateHeaderDong();activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();});
@@ -1683,7 +1750,7 @@ function renderHeader(){
 // ════════════════════════════════════════════
 // 모달
 // ════════════════════════════════════════════
-function show(id){document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
+function show(id){document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');pushPopupHistory(id);}
 function closeAll(){document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));}
 
 // ════════════════════════════════════════════
@@ -1830,6 +1897,7 @@ function renderAMembers(){
         ${u.status==='pending'?`<button class="btn btn-sm btn-green" onclick="setStatus('${u.id}','active')">✅ 승인</button>`:''}
         ${u.status==='active'?`<button class="btn btn-sm btn-red" onclick="setStatus('${u.id}','blocked')">차단</button>`:''}
         ${u.status==='blocked'?`<button class="btn btn-sm btn-green" onclick="setStatus('${u.id}','active')">활성화</button>`:''}
+        <button class="btn btn-sm" style="border-color:var(--accent);color:var(--accent)" onclick="openEditUser('${u.id}')">✏️ 수정</button>
         <button class="btn btn-sm btn-red" onclick="delUser('${u.id}')">삭제</button>
       </div></td>
     </tr>`).join('')}</tbody>
@@ -1897,6 +1965,48 @@ function setStatus(uid,s){
   if(u){u.status=s;renderAMembers();render();renderHeader();}
 }
 function delUser(uid){if(!confirm('회원을 삭제하시겠습니까?'))return;users=users.filter(u=>u.id!==uid);renderAMembers();render();}
+
+function openEditUser(uid){
+  const u=users.find(u=>u.id===uid);
+  if(!u)return;
+  document.getElementById('edit-user-sub').textContent=`아이디: ${u.id}`;
+  document.getElementById('eu-name').value=u.name||'';
+  document.getElementById('eu-phone').value=u.phone||'';
+  document.getElementById('eu-license').value=u.license||'';
+  document.getElementById('eu-pw').value='';
+  document.getElementById('eu-status').value=u.status||'active';
+  document.getElementById('eu-err').textContent='';
+  // 현재 편집 대상 uid 저장
+  document.getElementById('ov-edit-user').dataset.uid=uid;
+  closeAll();
+  show('ov-edit-user');
+}
+function doEditUser(){
+  const uid=document.getElementById('ov-edit-user').dataset.uid;
+  const u=users.find(u=>u.id===uid);
+  const err=document.getElementById('eu-err');
+  if(!u){err.textContent='회원을 찾을 수 없습니다';err.classList.add('show');return;}
+  const name=document.getElementById('eu-name').value.trim();
+  if(!name){err.textContent='이름을 입력하세요';err.classList.add('show');return;}
+  u.name=name;
+  u.phone=document.getElementById('eu-phone').value.trim();
+  u.license=document.getElementById('eu-license').value.trim();
+  u.status=document.getElementById('eu-status').value;
+  const pw=document.getElementById('eu-pw').value;
+  if(pw){u.pw=pw;}
+  err.classList.remove('show');
+  closeAll();
+  show('ov-admin');
+  renderAMembers();
+  renderAListings();
+  renderHeader();
+  render();
+  // 현재 열려있는 팝업이 이 회원 매물이면 담당자 칸 즉시 갱신
+  if(activePopupItem&&activePopupItem.ownerId===uid){
+    const ag=document.getElementById('dp-agent');
+    if(ag) ag.innerHTML=`<a href="tel:${u.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${u.license?`공인중개사 ${u.license}`:'담당자'}</div><div class="agent-name">${u.name}</div><div class="agent-phone">${u.phone}</div></div></div></a>`;
+  }
+}
 function delListing(ownerId,lid){
   if(!confirm('매물을 삭제하시겠습니까?'))return;
   const u=users.find(u=>u.id===ownerId);
