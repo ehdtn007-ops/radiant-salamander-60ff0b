@@ -92,9 +92,9 @@ select:hover,select:focus{border-color:var(--accent)}
 .cluster-label{font-size:10px;font-weight:700;color:#1a1d27;opacity:.8}
 .cpin-cluster::after{content:'';display:block;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #f7c948;margin:0 auto}
 /* 클러스터 팝업 */
-.cl-popup{background:var(--surface2);border:1px solid rgba(255,255,255,.1);border-radius:16px;min-width:260px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;margin-bottom:8px}
+.cl-popup{background:var(--surface2);border:1px solid rgba(255,255,255,.1);border-radius:16px;min-width:260px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;margin-bottom:8px;touch-action:pan-y}
 .cl-popup-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 10px;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
-.cl-popup-body{max-height:320px;overflow-y:auto;padding:10px 12px}
+.cl-popup-body{max-height:320px;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch}
 .cl-row{padding:6px 0}
 .cl-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;width:100%}
 .cl-btn:hover{opacity:.85}
@@ -135,6 +135,7 @@ select:hover,select:focus{border-color:var(--accent)}
   transition:opacity .25s,transform .25s;
   max-height:calc(100vh - 120px);
   overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 .dpop.show{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
@@ -1045,6 +1046,12 @@ function renderPins(coordMap){
             showPopup(item);
             kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
             if(currentTab!=='list')switchTab('list');
+            // 모바일: 패널 숨기고 팝업 표시
+            if(isMobileDevice()){
+              document.querySelector('.panel').style.display='none';
+              const mw=document.getElementById('map-wrap');
+              if(mw){mw.style.flex='1';mw.style.height='100%';}
+            }
             setTimeout(()=>{
               const card=document.getElementById('card-'+item.lid);
               if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1299,20 +1306,24 @@ function showPopup(item){
 
   document.getElementById('dpop').classList.add('show');
   // 모바일: 팝업 열릴 때 패널(매물목록) 숨기기
-  if(window.innerWidth<=768){
+  if(isMobileDevice()){
     document.querySelector('.panel').style.display='none';
     const mapWrap=document.getElementById('map-wrap');
-    if(mapWrap)mapWrap.style.height='100%';
+    if(mapWrap){mapWrap.style.flex='1';mapWrap.style.height='100%';}
   }
+}
+function isMobileDevice(){
+  // 세로/가로 모두 포함: 실제 터치 디바이스 여부로 판단
+  return window.matchMedia('(max-width:1024px) and (pointer:coarse)').matches || window.innerWidth<=768;
 }
 function closePopup(){
   document.getElementById('dpop').classList.remove('show');
   activeId=null;activePopupItem=null;clusterFilterIds=null;
   // 모바일: 패널 다시 보이기
-  if(window.innerWidth<=768){
+  if(isMobileDevice()){
     document.querySelector('.panel').style.display='';
     const mapWrap=document.getElementById('map-wrap');
-    if(mapWrap)mapWrap.style.height='';
+    if(mapWrap){mapWrap.style.flex='';mapWrap.style.height='';}
   }
   render();
 }
