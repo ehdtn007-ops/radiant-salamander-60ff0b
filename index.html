@@ -1036,6 +1036,7 @@ function renderPins(coordMap){
       setTimeout(()=>{
         const el=document.getElementById('pin-'+item.lid);
         if(el){
+          kakao.maps.event.preventMap(el);
           const handler=()=>{
             activeId=item.lid;activePopupItem=item;
             clusterFilterIds=null;
@@ -1043,7 +1044,6 @@ function renderPins(coordMap){
             render();
             showPopup(item);
             kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
-            // 모바일: 매물 탭으로 전환 후 카드 스크롤
             if(currentTab!=='list')switchTab('list');
             setTimeout(()=>{
               const card=document.getElementById('card-'+item.lid);
@@ -1070,6 +1070,7 @@ function renderPins(coordMap){
       setTimeout(()=>{
         const el=document.getElementById(clKey);
         if(el){
+          kakao.maps.event.preventMap(el);
           const handler=()=>showClusterPopup(items,lat,lng);
           el.addEventListener('click',handler);
           el.addEventListener('touchend',(e)=>{e.preventDefault();handler();},{passive:false});
@@ -1109,7 +1110,7 @@ function showClusterPopup(items,lat,lng){
     </div>`;
   }).join('<div style="height:1px;background:rgba(255,255,255,.08);margin:6px 0"></div>');
 
-  const html=`<div class="cl-popup" id="cl-popup-box">
+  const html=`<div class="cl-popup" id="cl-popup-box" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">
     <div class="cl-popup-header">
       <span>📍 매물 ${items.length}건</span>
       <button onclick="closeClusterPopup()" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:0 2px">✕</button>
@@ -1118,6 +1119,20 @@ function showClusterPopup(items,lat,lng){
   </div>`;
   clusterOverlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:html,yAnchor:1.1,zIndex:30});
   clusterOverlay.setMap(kakaoMap);
+  // 카카오맵이 overlay 클릭 이벤트 가로채지 않도록 처리
+  setTimeout(()=>{
+    const box=document.getElementById('cl-popup-box');
+    if(box){
+      kakao.maps.event.preventMap(box);
+      // 상세보기 버튼들에 touchend 추가 (모바일 대응)
+      box.querySelectorAll('.cl-btn').forEach(btn=>{
+        btn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();btn.click();},{passive:false});
+      });
+      // 닫기 버튼 touchend
+      const closeBtn=box.querySelector('button:not(.cl-btn)');
+      if(closeBtn)closeBtn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();closeClusterPopup();},{passive:false});
+    }
+  },50);
   window._clusterItems=items;window._clusterLat=lat;window._clusterLng=lng;
 }
 function closeClusterPopup(){
