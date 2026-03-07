@@ -475,7 +475,6 @@ select:hover,select:focus{border-color:var(--accent)}
       </div>
       <div class="fr">
         <div class="fg"><label class="fl">연락처</label><input class="fi" id="rphone" placeholder="010-0000-0000"></div>
-        <div class="fg"><label class="fl">공인중개사 번호 (선택)</label><input class="fi" id="rlicense" placeholder="제XXXXX호"></div>
       </div>
       <button class="btn btn-primary" style="margin-top:8px" onclick="doRegister()">가입 신청하기</button>
       <div class="fswitch">이미 계정이 있으신가요? <a onclick="show('ov-login')">로그인</a></div>
@@ -590,7 +589,6 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="modal-sub" id="edit-user-sub"></div>
     <div class="fg"><label class="fl">이름</label><input class="fi" id="eu-name" placeholder="이름"></div>
     <div class="fg"><label class="fl">연락처</label><input class="fi" id="eu-phone" placeholder="010-0000-0000"></div>
-    <div class="fg"><label class="fl">중개사 등록번호</label><input class="fi" id="eu-license" placeholder="등록번호 (없으면 비워두세요)"></div>
     <div class="fg"><label class="fl">비밀번호 변경 <span style="color:var(--text3);font-weight:400;text-transform:none">(비워두면 유지)</span></label><input class="fi" id="eu-pw" type="password" placeholder="새 비밀번호"></div>
     <div class="fg">
       <label class="fl">계정 상태</label>
@@ -1796,7 +1794,7 @@ function doRegister(){
   const pw=document.getElementById('rp').value,pw2=document.getElementById('rp2').value;
   const name=document.getElementById('rn').value.trim();
   const phone=document.getElementById('rphone').value.trim();
-  const license=document.getElementById('rlicense').value.trim();
+  const license=document.getElementById('rlicense')?document.getElementById('rlicense').value.trim():'';
   if(!id||id.length<4){err.textContent='아이디는 4자 이상이어야 합니다';err.classList.add('show');return;}
   if(!pw||pw.length<6){err.textContent='비밀번호는 6자 이상이어야 합니다';err.classList.add('show');return;}
   if(pw!==pw2){err.textContent='비밀번호가 일치하지 않습니다';err.classList.add('show');return;}
@@ -1972,7 +1970,6 @@ function openEditUser(uid){
   document.getElementById('edit-user-sub').textContent=`아이디: ${u.id}`;
   document.getElementById('eu-name').value=u.name||'';
   document.getElementById('eu-phone').value=u.phone||'';
-  document.getElementById('eu-license').value=u.license||'';
   document.getElementById('eu-pw').value='';
   document.getElementById('eu-status').value=u.status||'active';
   document.getElementById('eu-err').textContent='';
@@ -1990,7 +1987,6 @@ function doEditUser(){
   if(!name){err.textContent='이름을 입력하세요';err.classList.add('show');return;}
   u.name=name;
   u.phone=document.getElementById('eu-phone').value.trim();
-  u.license=document.getElementById('eu-license').value.trim();
   u.status=document.getElementById('eu-status').value;
   const pw=document.getElementById('eu-pw').value;
   if(pw){u.pw=pw;}
