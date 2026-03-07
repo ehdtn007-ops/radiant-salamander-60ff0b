@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고시원·모텔 매물지도</title>
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=101abfc1122832bf82c274c879984a27&libraries=services" referrerpolicy="origin"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#222636;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --accent:#4f8cff;--accent-d:#3a6fd8;--red:#ff6b6b;--green:#3ecf8e;--yellow:#f5c518;
+  --purple:#a855f7;--purple-d:#7c3aed;
+  --text:#f0f2ff;--text2:#8b90a7;--text3:#3d4460;
+}
+
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ══ 오버레이 / 모달 ══ */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+.overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:34px 30px;width:440px;max-width:95vw;position:relative;animation:slideUp .22s}
+.modal-xl{width:700px;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:22px}
+.modal-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;transition:color .15s}
+.modal-close:hover{color:var(--text)}
+
+.fg{margin-bottom:13px}
+.fl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block;letter-spacing:.4px;text-transform:uppercase}
+.fi{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 13px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fsec{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin:16px 0 10px;padding-top:14px;border-top:1px solid var(--border)}
+
+.btn{width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .2s;margin-top:4px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-d);transform:translateY(-1px)}
+.btn-sm{width:auto;padding:5px 12px;font-size:12px;border-radius:7px;margin-top:0}
+.btn-red{background:rgba(255,107,107,.14);color:var(--red);border:1px solid rgba(255,107,107,.25)}
+.btn-red:hover{background:rgba(255,107,107,.25)}
+.btn-green{background:rgba(62,207,142,.14);color:var(--green);border:1px solid rgba(62,207,142,.25)}
+.btn-green:hover{background:rgba(62,207,142,.25)}
+
+.fswitch{text-align:center;margin-top:14px;font-size:13px;color:var(--text2)}
+.fswitch a{color:var(--accent);cursor:pointer;font-weight:600}
+.fswitch a:hover{text-decoration:underline}
+.errmsg{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.28);color:var(--red);border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:13px;display:none}
+.errmsg.show{display:block}
+.hint-box{margin-top:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.8}
+.hidden{display:none!important}
+
+/* ══ 헤더 ══ */
+header{display:flex;align-items:center;gap:14px;padding:0 18px;height:54px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+.logo{font-size:17px;font-weight:800;color:var(--accent);letter-spacing:-.5px;white-space:nowrap}
+.filters{display:flex;gap:7px;flex:1;overflow-x:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.fg-h{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.fl-h{font-size:11px;color:var(--text2);font-weight:500}
+select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 9px;font-size:12px;font-family:inherit;cursor:pointer;outline:none;transition:border-color .2s}
+select:hover,select:focus{border-color:var(--accent)}
+.badge{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.huser{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.uchip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 11px 3px 7px;cursor:pointer;font-size:13px;transition:border-color .2s}
+.uchip:hover{border-color:var(--accent)}
+.uavatar{width:23px;height:23px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.uavatar.master{background:var(--yellow);color:#111}
+.hbtn{background:none;border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 13px;font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s;white-space:nowrap}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.hbtn.accent{background:rgba(79,140,255,.12);border-color:var(--accent);color:var(--accent)}
+.hbtn.accent:hover{background:rgba(79,140,255,.22)}
+
+/* ══ 메인 ══ */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ══ 지도 ══ */
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#kakao-map{width:100%;height:100%}
+
+/* 카카오맵 커스텀 오버레이 핀 */
+.cpin{position:relative;cursor:pointer;transform:translateY(-100%)}
+.cpin-bub{color:#fff;font-size:11px;font-weight:700;padding:5px 9px;border-radius:20px;white-space:nowrap;position:relative;transition:filter .15s;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.cpin-bub::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom:none}
+.cpin-bub.gs{background:#a855f7}
+.cpin-bub.gs::after{border-top-color:#a855f7}
+.cpin-bub.gs-r{background:#7c3aed}
+.cpin-bub.gs-r::after{border-top-color:#7c3aed}
+.cpin-bub.mt{background:#4f8cff}
+.cpin-bub.mt::after{border-top-color:#4f8cff}
+.cpin-bub.mt-r{background:#3ecf8e}
+.cpin-bub.mt-r::after{border-top-color:#3ecf8e}
+.cpin:hover .cpin-bub,.cpin.active .cpin-bub{filter:brightness(1.15);transform:scale(1.08)}
+
+/* 범례 */
+.legend{position:absolute;top:14px;left:14px;background:rgba(15,17,23,.92);border:1px solid var(--border);border-radius:10px;padding:10px 13px;display:flex;flex-direction:column;gap:5px;z-index:30;backdrop-filter:blur(8px)}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* 팝업 */
+.dpop{position:absolute;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:16px 18px;width:315px;box-shadow:0 8px 40px rgba(0,0,0,.6);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.dpop.show{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+.dpop-close{position:absolute;top:11px;right:13px;background:none;border:none;color:var(--text2);font-size:17px;cursor:pointer;line-height:1}
+.dpop-close:hover{color:var(--text)}
+.dpop-name{font-size:14px;font-weight:700;margin-bottom:3px;padding-right:20px}
+.dpop-price{font-size:19px;font-weight:800;color:var(--accent);margin-bottom:10px;letter-spacing:-.5px}
+.dpop-rows{display:flex;flex-direction:column;gap:5px}
+.dr{display:flex;justify-content:space-between;font-size:12px}
+.dr .k{color:var(--text2)}
+.dr .v{font-weight:600;text-align:right}
+.agent-card{margin-top:12px;padding:11px 13px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)}
+.agent-title{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px}
+.agent-body{display:flex;align-items:center;gap:10px}
+.agent-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.agent-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.agent-role{font-size:11px;color:var(--text2);margin-bottom:3px}
+.agent-phone{font-size:13px;font-weight:700;color:var(--green)}
+
+/* ══ 우측 패널 ══ */
+.panel{width:330px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.ph{padding:14px 18px 11px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ph-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:3px}
+.ph-count{font-size:20px;font-weight:800}
+.ph-count span{color:var(--accent)}
+.cl{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:13px 14px;cursor:pointer;transition:border-color .2s,background .2s,transform .15s}
+.card:hover{border-color:var(--accent);background:#252a3a;transform:translateY(-1px)}
+.card.active{border-color:var(--accent);background:#1e2540;box-shadow:0 0 0 1px var(--accent)}
+.ctop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px}
+.dtag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+.dtag.매매{background:rgba(79,140,255,.18);color:var(--accent)}
+.dtag.월세{background:rgba(62,207,142,.15);color:var(--green)}
+.dtag.고시원{background:rgba(168,85,247,.15);color:#c084fc}
+.dtag.모텔{background:rgba(79,140,255,.13);color:#7dd3fc}
+.cprice{font-size:14px;font-weight:700;letter-spacing:-.3px}
+.cname{font-size:13px;font-weight:600;margin-bottom:4px}
+.cmeta{font-size:11px;color:var(--text2);display:flex;gap:7px;flex-wrap:wrap}
+.cempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text2);gap:8px;font-size:13px}
+.cempty-icon{font-size:32px;opacity:.35}
+
+/* ══ 관리자 ══ */
+.atabs{display:flex;gap:3px;margin-bottom:18px;border-bottom:1px solid var(--border)}
+.atab{padding:7px 15px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;transition:all .15s;margin-bottom:-1px}
+.atab.active{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.asec{display:none}
+.asec.active{display:block}
+.atable{width:100%;border-collapse:collapse;font-size:12px}
+.atable th{text-align:left;padding:7px 9px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+.atable td{padding:9px 9px;border-bottom:1px solid var(--border);vertical-align:middle}
+.atable tr:last-child td{border-bottom:none}
+.atable tr:hover td{background:rgba(255,255,255,.015)}
+.sbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.s-active{background:rgba(62,207,142,.14);color:var(--green)}
+.s-pending{background:rgba(245,197,24,.14);color:var(--yellow)}
+.s-blocked{background:rgba(255,107,107,.14);color:var(--red)}
+.abts{display:flex;gap:4px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<!-- ══ 로그인 ══ -->
+<div class="overlay hidden" id="ov-login">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">🔑 로그인</div>
+    <div class="modal-sub">매물 등록은 로그인 후 이용 가능합니다</div>
+    <div class="errmsg" id="login-err"></div>
+    <div class="fg"><label class="fl">아이디</label><input class="fi" id="li" placeholder="아이디 입력"></div>
+    <div class="fg"><label class="fl">비밀번호</label><input class="fi" id="lp" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary" onclick="doLogin()">로그인</button>
+    <div class="hint-box">테스트 계정: <code style="color:var(--accent)">master / master123</code> (관리자) &nbsp;|&nbsp; <code style="color:var(--green)">hong / hong123</code></div>
+    <div class="fswitch">계정이 없으신가요? <a onclick="show('ov-reg')">회원가입</a></div>
+  </div>
+</div>
+
+<!-- ══ 회원가입 ══ -->
+<div class="overlay hidden" id="ov-reg">
+  <div class="modal" style="width:500px;max-height:90vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">✍️ 회원가입</div>
+    <div class="modal-sub">가입 후 매물을 등록할 수 있습니다</div>
+    <div class="errmsg" id="reg-err"></div>
+    <div class="fsec">👤 계정 정보</div>
+    <div class="fr">
+      <div class="fg"><label class="fl">아이디</label><input class="fi" id="ri" placeholder="4자 이상"></div>
+      <div class="fg"><label class="fl">이름</label><input class="fi" id="rn" placeholder="실명"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">비밀번호</label><input class="fi" id="rp" type="password" placeholder="6자 이상"></div>
+      <div class="fg"><label class="fl">비밀번호 확인</label><input class="fi" id="rp2" type="password" placeholder="동일 입력"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">연락처</label><input class="fi" id="rphone" placeholder="010-0000-0000"></div>
+      <div class="fg"><label class="fl">공인중개사 번호 (선택)</label><input class="fi" id="rlicense" placeholder="제XXXXX호"></div>
+    </div>
+    <div class="fsec">🏠 매물 정보 (선택)</div>
+    <div class="fr">
+      <div class="fg"><label class="fl">매물종류</label>
+        <select class="fi" id="rtype"><option value="">선택안함</option><option>고시원</option><option>모텔</option></select>
+      </div>
+      <div class="fg"><label class="fl">거래유형</label>
+        <select class="fi" id="rdeal" onchange="toggleRent('r')"><option value="">선택안함</option><option>매매</option><option>월세</option></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">매물명</label><input class="fi" id="rpname" placeholder="예: 강남 베스트고시원"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">지역 (구)</label>
+        <select class="fi" id="rarea"><option>강남구</option><option>마포구</option><option>서초구</option><option>송파구</option><option>용산구</option></select>
+      </div>
+      <div class="fg"><label class="fl">동 (예: 역삼동)</label><input class="fi" id="rdong" placeholder="예: 역삼동"></div>
+    </div>
+    <div class="fr" id="r-sale-row">
+      <div class="fg"><label class="fl">매매가 (만원)</label><input class="fi" id="rprice" type="number" placeholder="예: 15000"></div>
+      <div class="fg"><label class="fl">객실수</label><input class="fi" id="rrooms" type="number" placeholder="예: 20"></div>
+    </div>
+    <div class="fr hidden" id="r-rent-row">
+      <div class="fg"><label class="fl">보증금 (만원)</label><input class="fi" id="rdeposit" type="number" placeholder="예: 500"></div>
+      <div class="fg"><label class="fl">월세 (만원)</label><input class="fi" id="rmonthly" type="number" placeholder="예: 45"></div>
+    </div>
+    <div class="fr hidden" id="r-rooms-rent">
+      <div class="fg"><label class="fl">객실수</label><input class="fi" id="rrooms2" type="number" placeholder="예: 20"></div>
+      <div class="fg"><label class="fl">층수</label><input class="fi" id="rfloor" type="number" placeholder="예: 3"></div>
+    </div>
+    <div class="fr" id="r-detail-row">
+      <div class="fg"><label class="fl">층수</label><input class="fi" id="rfloor2" type="number" placeholder="예: 3"></div>
+      <div class="fg"><label class="fl">준공연도</label><input class="fi" id="ryear" type="number" placeholder="예: 2015"></div>
+    </div>
+    <div class="fg"><label class="fl">매물 특징</label><input class="fi" id="rdesc" placeholder="예: 역세권, 풀옵션, 만실운영중"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="doRegister()">가입하기</button>
+    <div class="fswitch">이미 계정이 있으신가요? <a onclick="show('ov-login')">로그인</a></div>
+  </div>
+</div>
+
+<!-- ══ 매물 등록 ══ -->
+<div class="overlay hidden" id="ov-listing">
+  <div class="modal" style="width:500px;max-height:90vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">📋 매물 등록</div>
+    <div class="modal-sub">등록 즉시 지도에 핀으로 표시됩니다</div>
+    <div class="errmsg" id="lst-err"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">매물종류</label>
+        <select class="fi" id="ltype"><option>고시원</option><option>모텔</option></select>
+      </div>
+      <div class="fg"><label class="fl">거래유형</label>
+        <select class="fi" id="ldeal" onchange="toggleRent('l')"><option>매매</option><option>월세</option></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">매물명</label><input class="fi" id="lpname" placeholder="예: 강남 베스트고시원"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">지역 (구)</label>
+        <select class="fi" id="larea"><option>강남구</option><option>마포구</option><option>서초구</option><option>송파구</option><option>용산구</option></select>
+      </div>
+      <div class="fg"><label class="fl">동 (예: 역삼동)</label><input class="fi" id="ldong" placeholder="예: 역삼동"></div>
+    </div>
+    <div class="fr" id="l-sale-row">
+      <div class="fg"><label class="fl">매매가 (만원)</label><input class="fi" id="lprice" type="number" placeholder="예: 15000"></div>
+      <div class="fg"><label class="fl">객실수</label><input class="fi" id="lrooms" type="number" placeholder="예: 20"></div>
+    </div>
+    <div class="fr hidden" id="l-rent-row">
+      <div class="fg"><label class="fl">보증금 (만원)</label><input class="fi" id="ldeposit" type="number" placeholder="예: 500"></div>
+      <div class="fg"><label class="fl">월세 (만원)</label><input class="fi" id="lmonthly" type="number" placeholder="예: 45"></div>
+    </div>
+    <div class="fr hidden" id="l-rooms-rent">
+      <div class="fg"><label class="fl">객실수</label><input class="fi" id="lrooms2" type="number" placeholder="예: 20"></div>
+      <div class="fg"><label class="fl">층수</label><input class="fi" id="lfloor" type="number" placeholder="예: 3"></div>
+    </div>
+    <div class="fr" id="l-detail-row">
+      <div class="fg"><label class="fl">층수</label><input class="fi" id="lfloor2" type="number" placeholder="예: 3"></div>
+      <div class="fg"><label class="fl">준공연도</label><input class="fi" id="lyear" type="number" placeholder="예: 2015"></div>
+    </div>
+    <div class="fg"><label class="fl">매물 특징</label><input class="fi" id="ldesc" placeholder="예: 역세권, 풀옵션, 만실운영중"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="doAddListing()">등록하기</button>
+  </div>
+</div>
+
+<!-- ══ 관리자 ══ -->
+<div class="overlay hidden" id="ov-admin">
+  <div class="modal modal-xl">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">⚙️ 마스터 관리자</div>
+    <div class="modal-sub">회원 및 매물 전체 관리</div>
+    <div class="atabs">
+      <div class="atab active" onclick="atab('members')">👥 회원 관리</div>
+      <div class="atab" onclick="atab('listings')">🏠 매물 관리</div>
+    </div>
+    <div class="asec active" id="as-members"></div>
+    <div class="asec" id="as-listings"></div>
+  </div>
+</div>
+
+<!-- ══ 헤더 ══ -->
+<header>
+  <div class="logo">🏨 매물지도</div>
+  <button class="hbtn" id="login-trigger" onclick="show('ov-login')">로그인</button>
+  <div class="filters">
+    <div class="fg-h"><span class="fl-h">종류</span>
+      <select id="ff-type"><option value="all">전체</option><option value="고시원">고시원</option><option value="모텔">모텔</option></select>
+    </div>
+    <div class="fg-h"><span class="fl-h">거래</span>
+      <select id="ff-deal"><option value="all">전체</option><option value="매매">매매</option><option value="월세">월세</option></select>
+    </div>
+    <div class="fg-h"><span class="fl-h">지역</span>
+      <select id="ff-area"><option value="all">전체</option><option>강남구</option><option>마포구</option><option>서초구</option><option>송파구</option><option>용산구</option></select>
+    </div>
+    <div class="fg-h"><span class="fl-h">최대금액</span>
+      <select id="ff-price">
+        <option value="99999">전체</option><option value="1">1억↓</option>
+        <option value="5">5억↓</option><option value="10">10억↓</option><option value="30">30억↓</option>
+      </select>
+    </div>
+  </div>
+  <div class="badge" id="total-badge">0건</div>
+  <div class="huser" id="huser"></div>
+</header>
+
+<!-- ══ 메인 ══ -->
+<div class="main">
+  <div id="map-wrap">
+    <div id="kakao-map"></div>
+
+    <!-- 범례 -->
+    <div class="legend">
+      <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:.5px;margin-bottom:2px">매물종류</div>
+      <div class="li"><div class="ld" style="background:#a855f7"></div>고시원 매매</div>
+      <div class="li"><div class="ld" style="background:#7c3aed"></div>고시원 월세</div>
+      <div class="li"><div class="ld" style="background:#4f8cff"></div>모텔 매매</div>
+      <div class="li"><div class="ld" style="background:#3ecf8e"></div>모텔 월세</div>
+    </div>
+
+    <!-- 지도 팝업 -->
+    <div class="dpop" id="dpop">
+      <button class="dpop-close" onclick="closePopup()">✕</button>
+      <div class="dpop-name" id="dp-name"></div>
+      <div class="dpop-price" id="dp-price"></div>
+      <div class="dpop-rows" id="dp-rows"></div>
+      <div id="dp-agent"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">검색된 매물</div>
+      <div class="ph-count"><span id="pc">0</span>건</div>
+    </div>
+    <div class="cl" id="cl"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════
+// 데이터
+// ════════════════════════════════════
+let users = [
+  { id:'master', pw:'master123', name:'마스터관리자', phone:'02-0000-0000', license:'', role:'master', status:'active' },
+  { id:'hong', pw:'hong123', name:'홍길동', phone:'010-1234-5678', license:'제12345호', role:'user', status:'active',
+    listings:[{ lid:'u1', type:'고시원', deal:'매매', name:'마포 베스트고시원', area:'마포구', dong:'공덕동', price:15000, rooms:20, floor:3, year:2015, desc:'풀옵션, 만실운영중' }]},
+  { id:'kim', pw:'kim123', name:'김민수', phone:'010-2222-3333', license:'제67890호', role:'user', status:'active',
+    listings:[{ lid:'u2', type:'모텔', deal:'매매', name:'강남 시티모텔', area:'강남구', dong:'역삼동', price:85000, rooms:42, floor:8, year:2005, desc:'강남대로 코너' }]},
+  { id:'lee', pw:'lee123', name:'이영희', phone:'010-4444-5555', license:'', role:'user', status:'active',
+    listings:[{ lid:'u3', type:'고시원', deal:'월세', name:'역삼 스튜디오고시원', area:'강남구', dong:'역삼동', price:55, deposit:500, monthly:55, rooms:25, floor:6, year:2021, desc:'강남역 3분, 신축' }]},
+  { id:'park', pw:'park123', name:'박철수', phone:'010-6666-7777', license:'제99999호', role:'user', status:'pending',
+    listings:[{ lid:'u4', type:'모텔', deal:'월세', name:'홍대 스카이모텔', area:'마포구', dong:'서교동', price:600, deposit:3000, monthly:600, rooms:22, floor:4, year:2009, desc:'홍대 유흥가' }]},
+];
+
+// 기본 매물 (동 단위 주소)
+const BASE = [
+  { lid:'b1', type:'고시원', deal:'매매', name:'공덕 스마트고시원',  area:'마포구', dong:'공덕동',   price:8500,   rooms:14, floor:2, year:2010, desc:'역세권 5분' },
+  { lid:'b2', type:'고시원', deal:'매매', name:'서초 하우스고시원',  area:'서초구', dong:'서초동',   price:18000,  rooms:22, floor:4, year:2013, desc:'대학가 인접' },
+  { lid:'b3', type:'고시원', deal:'매매', name:'잠실 편한고시원',    area:'송파구', dong:'잠실동',   price:22000,  rooms:28, floor:3, year:2016, desc:'잠실역 도보' },
+  { lid:'b4', type:'고시원', deal:'월세', name:'마포 클린고시원',    area:'마포구', dong:'아현동',   price:45,  deposit:300,  monthly:45,  rooms:12, floor:3, year:2020, desc:'신축, 에어컨' },
+  { lid:'b5', type:'모텔',   deal:'매매', name:'마포 뉴스타모텔',    area:'마포구', dong:'서교동',   price:42000,  rooms:30, floor:6, year:2000, desc:'홍대입구 인근' },
+  { lid:'b6', type:'모텔',   deal:'매매', name:'용산 그랜드모텔',    area:'용산구', dong:'이태원동', price:120000, rooms:60, floor:10,year:2008, desc:'이태원 상권' },
+  { lid:'b7', type:'모텔',   deal:'매매', name:'송파 파크모텔',      area:'송파구', dong:'방이동',   price:65000,  rooms:38, floor:7, year:2003, desc:'올림픽공원 인접' },
+  { lid:'b8', type:'모텔',   deal:'월세', name:'강남 루나모텔',      area:'강남구', dong:'논현동',   price:800, deposit:5000, monthly:800, rooms:28, floor:5, year:2006, desc:'수익형 임대' },
+  { lid:'b9', type:'모텔',   deal:'월세', name:'이태원 글로벌모텔',  area:'용산구', dong:'이태원동', price:900, deposit:6000, monthly:900, rooms:35, floor:7, year:2011, desc:'외국인 수요多' },
+];
+
+function buildAll() {
+  const result = BASE.map(b => ({...b, ownerId:null}));
+  users.forEach(u => {
+    if (u.role==='master' || !u.listings || u.status==='blocked') return;
+    u.listings.forEach(lst => {
+      result.push({...lst, ownerId:u.id, ownerName:u.name, ownerPhone:u.phone, ownerLicense:u.license});
+    });
+  });
+  return result;
+}
+
+let currentUser = null;
+let activeId = null;
+let kakaoMap = null;
+let overlays = []; // 카카오 커스텀 오버레이 목록
+
+// ════════════════════════════════════
+// 가격 포맷
+// ════════════════════════════════════
+function won(v) {
+  v = v||0;
+  if (v>=10000) { const a=Math.floor(v/10000),b=v%10000; return b?`${a}억 ${b.toLocaleString()}만`:`${a}억`; }
+  return `${v.toLocaleString()}만`;
+}
+function fmtPrice(item) {
+  return item.deal==='월세' ? `보증금 ${won(item.deposit)} / 월 ${(item.price||0).toLocaleString()}만` : won(item.price);
+}
+function pinLbl(item) {
+  const m = item.type==='고시원'?'🏠':'🏨';
+  if (item.deal==='월세') return `${m} 보${item.deposit||0}만/월${item.price||0}만`;
+  const v = item.price||0;
+  if (v>=10000){const a=Math.floor(v/10000),r=v%10000;return `${m} ${a}억${r?Math.round(r/1000)+'천':''}`;}
+  return `${m} ${v.toLocaleString()}만`;
+}
+
+// 동까지만 노출 (번지수 제거)
+function maskAddr(item) {
+  return `서울 ${item.area} ${item.dong||''}`.trim();
+}
+
+// ════════════════════════════════════
+// 카카오맵 초기화
+// ════════════════════════════════════
+function initMap() {
+  const container = document.getElementById('kakao-map');
+  const options = {
+    center: new kakao.maps.LatLng(37.5326, 126.9907), // 서울 중심
+    level: 8
+  };
+  kakaoMap = new kakao.maps.Map(container, options);
+  kakaoMap.setMinLevel(5);
+  kakaoMap.setMaxLevel(11);
+  render();
+}
+
+let geocoderObj = null;
+
+function getLatLng(area, dong, callback) {
+  if (!geocoderObj) {
+    // geocoder 없으면 구 중심 좌표 fallback
+    const fallback = {
+      '강남구':[37.5172,127.0473],'마포구':[37.5663,126.9016],
+      '서초구':[37.4837,127.0324],'송파구':[37.5145,127.1059],'용산구':[37.5324,126.9902]
+    };
+    const c = fallback[area]||[37.5326,126.9907];
+    callback(c[0]+(Math.random()-.5)*0.01, c[1]+(Math.random()-.5)*0.01);
+    return;
+  }
+  const query = `서울 ${area} ${dong}`;
+  geocoderObj.addressSearch(query, function(result, status) {
+    if (status === kakao.maps.services.Status.OK) {
+      callback(parseFloat(result[0].y), parseFloat(result[0].x));
+    } else {
+      const fallback = {
+        '강남구':[37.5172,127.0473],'마포구':[37.5663,126.9016],
+        '서초구':[37.4837,127.0324],'송파구':[37.5145,127.1059],'용산구':[37.5324,126.9902]
+      };
+      const c = fallback[area]||[37.5326,126.9907];
+      callback(c[0]+(Math.random()-.5)*0.01, c[1]+(Math.random()-.5)*0.01);
+    }
+  });
+}
+
+// ════════════════════════════════════
+// 핀 클래스 결정
+// ════════════════════════════════════
+function pinClass(item) {
+  if (item.type==='고시원') return item.deal==='월세' ? 'gs-r' : 'gs';
+  return item.deal==='월세' ? 'mt-r' : 'mt';
+}
+
+// ════════════════════════════════════
+// 필터
+// ════════════════════════════════════
+function getF() {
+  return {
+    type: document.getElementById('ff-type').value,
+    deal: document.getElementById('ff-deal').value,
+    area: document.getElementById('ff-area').value,
+    price: parseFloat(document.getElementById('ff-price').value),
+  };
+}
+function filtered() {
+  const f = getF();
+  return buildAll().filter(item => {
+    if (f.type!=='all' && item.type!==f.type) return false;
+    if (f.deal!=='all' && item.deal!==f.deal) return false;
+    if (f.area!=='all' && item.area!==f.area) return false;
+    const pv = item.deal==='월세' ? (item.deposit||0)/10000 : (item.price||0)/10000;
+    return pv <= f.price;
+  });
+}
+
+// ════════════════════════════════════
+// 렌더 (지도 핀 + 카드 리스트)
+// ════════════════════════════════════
+function render() {
+  const items = filtered();
+  document.getElementById('total-badge').textContent = `${items.length}건`;
+  document.getElementById('pc').textContent = items.length;
+
+  // ── 카드 리스트 (지도 없어도 항상 렌더) ──
+  const listEl = document.getElementById('cl');
+  listEl.innerHTML = '';
+  if (!items.length) {
+    listEl.innerHTML = `<div class="cempty"><div class="cempty-icon">🔍</div><div>조건에 맞는 매물이 없습니다</div></div>`;
+  } else {
+    items.forEach(item => {
+      const c = document.createElement('div');
+      c.className = 'card' + (activeId===item.lid?' active':'');
+      c.id = 'card-' + item.lid;
+      c.innerHTML = `
+        <div class="ctop">
+          <div style="display:flex;gap:4px">
+            <span class="dtag ${item.type}">${item.type}</span>
+            <span class="dtag ${item.deal}">${item.deal}</span>
+          </div>
+          <span class="cprice">${fmtPrice(item)}</span>
+        </div>
+        <div class="cname">${item.name}</div>
+        <div class="cmeta">
+          <span>📍 ${maskAddr(item)}</span>
+          <span>🚪 ${item.rooms||'-'}실</span>
+          <span>🏢 ${item.floor||'-'}층</span>
+        </div>`;
+      c.addEventListener('click', () => { activeId=item.lid; render(); showPopup(item); c.scrollIntoView({behavior:'smooth',block:'nearest'}); });
+      listEl.appendChild(c);
+    });
+  }
+
+  // ── 지도 핀 (카카오맵 로드된 경우에만) ──
+  if (!kakaoMap) return;
+
+  overlays.forEach(o => o.setMap(null));
+  overlays = [];
+
+  items.forEach(item => {
+    getLatLng(item.area, item.dong||item.area, (lat, lng) => {
+      const pc = pinClass(item);
+      const content = `<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}">
+        <div class="cpin-bub ${pc}">${pinLbl(item)}</div>
+      </div>`;
+      const overlay = new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(lat, lng),
+        content: content,
+        yAnchor: 1,
+        zIndex: activeId===item.lid ? 20 : 10
+      });
+      overlay.setMap(kakaoMap);
+      overlays.push(overlay);
+
+      setTimeout(() => {
+        const el = document.getElementById('pin-' + item.lid);
+        if (el) {
+          el.addEventListener('click', () => {
+            activeId = item.lid; render(); showPopup(item);
+            kakaoMap.panTo(new kakao.maps.LatLng(lat, lng));
+            const card = document.getElementById('card-' + item.lid);
+            if (card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
+          });
+        }
+      }, 100);
+    });
+  });
+}
+
+// ════════════════════════════════════
+// 팝업
+// ════════════════════════════════════
+function showPopup(item) {
+  document.getElementById('dp-name').textContent = item.name;
+  document.getElementById('dp-price').textContent = fmtPrice(item);
+  document.getElementById('dp-rows').innerHTML = `
+    <div class="dr"><span class="k">매물종류</span><span class="v">${item.type}</span></div>
+    <div class="dr"><span class="k">거래유형</span><span class="v">${item.deal}</span></div>
+    <div class="dr"><span class="k">위치</span><span class="v">${maskAddr(item)}</span></div>
+    <div class="dr"><span class="k">객실수</span><span class="v">${item.rooms||'-'}실</span></div>
+    <div class="dr"><span class="k">층수</span><span class="v">${item.floor||'-'}층</span></div>
+    <div class="dr"><span class="k">준공연도</span><span class="v">${item.year||'-'}년</span></div>
+    <div class="dr"><span class="k">특징</span><span class="v">${item.desc||'-'}</span></div>`;
+
+  const ag = document.getElementById('dp-agent');
+  if (item.ownerId) {
+    const owner = users.find(u=>u.id===item.ownerId);
+    if (owner) {
+      ag.innerHTML = `
+        <div class="agent-card">
+          <div class="agent-title">📞 담당 공인중개사</div>
+          <div class="agent-body">
+            <div class="agent-avatar">${owner.name[0]}</div>
+            <div>
+              <div class="agent-name">${owner.name}</div>
+              <div class="agent-role">${owner.license ? `공인중개사 ${owner.license}` : '담당자'}</div>
+              <div class="agent-phone">${owner.phone}</div>
+            </div>
+          </div>
+        </div>`;
+    } else ag.innerHTML='';
+  } else {
+    ag.innerHTML=`<div class="agent-card" style="text-align:center;color:var(--text2);font-size:12px;padding:12px">문의: 관리자에게 연락하세요</div>`;
+  }
+  document.getElementById('dpop').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('dpop').classList.remove('show');
+  activeId=null; render();
+}
+
+['ff-type','ff-deal','ff-area','ff-price'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>{
+    activeId=null; document.getElementById('dpop').classList.remove('show'); render();
+  });
+});
+
+// ════════════════════════════════════
+// 헤더
+// ════════════════════════════════════
+function renderHeader() {
+  const el = document.getElementById('huser');
+  const trigger = document.getElementById('login-trigger');
+  if (!currentUser) {
+    trigger.style.display='block';
+    el.innerHTML=`<button class="hbtn accent" onclick="show('ov-reg')">회원가입</button>`;
+  } else {
+    trigger.style.display='none';
+    const isMaster=currentUser.role==='master';
+    el.innerHTML=`
+      ${!isMaster?`<button class="hbtn accent" onclick="openListing()">+ 매물 등록</button>`:''}
+      <div class="uchip" onclick="${isMaster?'openAdmin()':''}">
+        <div class="uavatar ${isMaster?'master':''}">${currentUser.name[0]}</div>
+        <span>${currentUser.name}</span>
+        ${isMaster?'<span style="font-size:10px;margin-left:2px">⚙️</span>':''}
+      </div>
+      <button class="hbtn" onclick="doLogout()">로그아웃</button>`;
+  }
+}
+
+// ════════════════════════════════════
+// 모달
+// ════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function closeAll() {
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));
+}
+
+// ════════════════════════════════════
+// 로그인
+// ════════════════════════════════════
+function doLogin() {
+  const id=document.getElementById('li').value.trim();
+  const pw=document.getElementById('lp').value;
+  const err=document.getElementById('login-err');
+  const u=users.find(u=>u.id===id&&u.pw===pw);
+  if (!u){err.textContent='아이디 또는 비밀번호가 틀렸습니다.';err.classList.add('show');return;}
+  if (u.status==='blocked'){err.textContent='차단된 계정입니다.';err.classList.add('show');return;}
+  currentUser=u; closeAll(); err.classList.remove('show');
+  document.getElementById('li').value=''; document.getElementById('lp').value='';
+  renderHeader(); render();
+}
+function doLogout(){currentUser=null;renderHeader();render();}
+
+// ════════════════════════════════════
+// 회원가입
+// ════════════════════════════════════
+function toggleRent(prefix) {
+  const isRent=document.getElementById(prefix+'deal').value==='월세';
+  document.getElementById(prefix+'-sale-row').classList.toggle('hidden',isRent);
+  document.getElementById(prefix+'-rent-row').classList.toggle('hidden',!isRent);
+  document.getElementById(prefix+'-rooms-rent').classList.toggle('hidden',!isRent);
+  document.getElementById(prefix+'-detail-row').classList.toggle('hidden',isRent);
+}
+
+function doRegister() {
+  const err=document.getElementById('reg-err');
+  const id=document.getElementById('ri').value.trim();
+  const pw=document.getElementById('rp').value;
+  const pw2=document.getElementById('rp2').value;
+  const name=document.getElementById('rn').value.trim();
+  const phone=document.getElementById('rphone').value.trim();
+  const license=document.getElementById('rlicense').value.trim();
+  if (!id||id.length<4){err.textContent='아이디는 4자 이상';err.classList.add('show');return;}
+  if (!pw||pw.length<6){err.textContent='비밀번호는 6자 이상';err.classList.add('show');return;}
+  if (pw!==pw2){err.textContent='비밀번호 불일치';err.classList.add('show');return;}
+  if (!name){err.textContent='이름을 입력하세요';err.classList.add('show');return;}
+  if (users.find(u=>u.id===id)){err.textContent='이미 사용중인 아이디';err.classList.add('show');return;}
+
+  const ptype=document.getElementById('rtype').value;
+  const pdeal=document.getElementById('rdeal').value;
+  const listings=[];
+  if (ptype&&pdeal) {
+    const isRent=pdeal==='월세';
+    listings.push({
+      lid:'u'+Date.now(), type:ptype, deal:pdeal,
+      name:document.getElementById('rpname').value.trim()||`${ptype} 매물`,
+      area:document.getElementById('rarea').value,
+      dong:document.getElementById('rdong').value.trim()||'',
+      price:isRent?parseFloat(document.getElementById('rmonthly').value)||0:parseFloat(document.getElementById('rprice').value)||0,
+      deposit:isRent?parseFloat(document.getElementById('rdeposit').value)||0:null,
+      monthly:isRent?parseFloat(document.getElementById('rmonthly').value)||0:null,
+      rooms:parseInt(isRent?document.getElementById('rrooms2').value:document.getElementById('rrooms').value)||0,
+      floor:parseInt(isRent?document.getElementById('rfloor').value:document.getElementById('rfloor2').value)||1,
+      year:parseInt(document.getElementById('ryear').value)||2020,
+      desc:document.getElementById('rdesc').value.trim()||'',
+    });
+  }
+  const nu={id,pw,name,phone,license,role:'user',status:'active',listings};
+  users.push(nu); currentUser=nu; closeAll(); err.classList.remove('show');
+  renderHeader(); render();
+  alert(`환영합니다, ${name}님!${listings.length?'\n매물이 지도에 등록되었습니다.':''}`);
+}
+
+// ════════════════════════════════════
+// 매물 등록
+// ════════════════════════════════════
+function openListing(){if(!currentUser){show('ov-login');return;}show('ov-listing');}
+
+function doAddListing() {
+  if (!currentUser) return;
+  const err=document.getElementById('lst-err');
+  const name=document.getElementById('lpname').value.trim();
+  if (!name){err.textContent='매물명을 입력하세요';err.classList.add('show');return;}
+  const deal=document.getElementById('ldeal').value;
+  const isRent=deal==='월세';
+  const lst={
+    lid:'u'+Date.now(),
+    type:document.getElementById('ltype').value, deal, name,
+    area:document.getElementById('larea').value,
+    dong:document.getElementById('ldong').value.trim()||'',
+    price:isRent?parseFloat(document.getElementById('lmonthly').value)||0:parseFloat(document.getElementById('lprice').value)||0,
+    deposit:isRent?parseFloat(document.getElementById('ldeposit').value)||0:null,
+    monthly:isRent?parseFloat(document.getElementById('lmonthly').value)||0:null,
+    rooms:parseInt(isRent?document.getElementById('lrooms2').value:document.getElementById('lrooms').value)||0,
+    floor:parseInt(isRent?document.getElementById('lfloor').value:document.getElementById('lfloor2').value)||1,
+    year:parseInt(document.getElementById('lyear').value)||2020,
+    desc:document.getElementById('ldesc').value.trim()||'',
+  };
+  const u=users.find(u=>u.id===currentUser.id);
+  if(!u.listings)u.listings=[];
+  u.listings.push(lst);
+  closeAll(); err.classList.remove('show');
+  render();
+  alert('매물이 등록되었습니다!');
+}
+
+// ════════════════════════════════════
+// 관리자
+// ════════════════════════════════════
+function openAdmin(){if(!currentUser||currentUser.role!=='master')return;show('ov-admin');renderAMembers();}
+function atab(t){
+  document.querySelectorAll('.atab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='members')||(i===1&&t==='listings')));
+  document.querySelectorAll('.asec').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='members')||(i===1&&t==='listings')));
+  t==='members'?renderAMembers():renderAListings();
+}
+function renderAMembers(){
+  const el=document.getElementById('as-members');
+  const list=users.filter(u=>u.role!=='master');
+  if(!list.length){el.innerHTML='<div style="color:var(--text2);padding:24px;text-align:center">등록된 회원이 없습니다</div>';return;}
+  el.innerHTML=`<table class="atable">
+    <thead><tr><th>아이디</th><th>이름</th><th>연락처</th><th>중개사번호</th><th>매물수</th><th>상태</th><th>관리</th></tr></thead>
+    <tbody>${list.map(u=>`<tr>
+      <td><code style="color:var(--accent);font-size:11px">${u.id}</code></td>
+      <td style="font-weight:600">${u.name}</td>
+      <td style="color:var(--text2);font-size:11px">${u.phone||'-'}</td>
+      <td style="color:var(--text2);font-size:11px">${u.license||'-'}</td>
+      <td style="text-align:center">${(u.listings||[]).length}건</td>
+      <td><span class="sbadge s-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status==='active'?'활성':u.status==='pending'?'대기':'차단'}</span></td>
+      <td><div class="abts">
+        ${u.status!=='active'?`<button class="btn btn-sm btn-green" onclick="setStatus('${u.id}','active')">활성화</button>`:''}
+        ${u.status!=='blocked'?`<button class="btn btn-sm btn-red" onclick="setStatus('${u.id}','blocked')">차단</button>`:''}
+        <button class="btn btn-sm btn-red" onclick="delUser('${u.id}')">삭제</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+function renderAListings(){
+  const el=document.getElementById('as-listings');
+  const all=buildAll();
+  el.innerHTML=`<table class="atable">
+    <thead><tr><th>종류</th><th>매물명</th><th>위치</th><th>거래</th><th>가격</th><th>담당자</th><th>연락처</th><th>관리</th></tr></thead>
+    <tbody>${all.map(item=>`<tr>
+      <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
+      <td style="font-weight:600;font-size:12px">${item.name}</td>
+      <td style="color:var(--text2);font-size:11px">${maskAddr(item)}</td>
+      <td><span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span></td>
+      <td style="font-size:11px">${fmtPrice(item)}</td>
+      <td style="font-size:11px;font-weight:600">${item.ownerId?(users.find(u=>u.id===item.ownerId)||{name:'?'}).name:'기본'}</td>
+      <td style="font-size:11px;color:var(--green)">${item.ownerPhone||'-'}</td>
+      <td>${item.ownerId?`<button class="btn btn-sm btn-red" onclick="delListing('${item.ownerId}','${item.lid}')">삭제</button>`:'<span style="color:var(--text3);font-size:10px">기본매물</span>'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+function setStatus(uid,s){const u=users.find(u=>u.id===uid);if(u){u.status=s;renderAMembers();render();}}
+function delUser(uid){if(!confirm('회원을 삭제하시겠습니까?'))return;users=users.filter(u=>u.id!==uid);renderAMembers();render();}
+function delListing(ownerId,lid){
+  if(!confirm('매물을 삭제하시겠습니까?'))return;
+  const u=users.find(u=>u.id===ownerId);
+  if(u&&u.listings){u.listings=u.listings.filter(l=>l.lid!==lid);renderAListings();render();}
+}
+
+// ════════════════════════════════════
+// 초기화
+// ════════════════════════════════════
+renderHeader();
+render(); // 카드 리스트 즉시 표시
+
+// 카카오맵 초기화
+window.addEventListener('load', function() {
+  try {
+    geocoderObj = new kakao.maps.services.Geocoder();
+    initMap();
+  } catch(e) {
+    console.warn('카카오맵 초기화 실패 - 카카오 개발자 콘솔에서 https://radiant-salamander-60ff0b.netlify.app 도메인을 등록하세요:', e);
+  }
+});
+</script>
+</body>
+</html>
