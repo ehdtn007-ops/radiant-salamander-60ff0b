@@ -57,6 +57,73 @@ textarea.fi{resize:vertical;min-height:80px;line-height:1.6}
 
 /* ═══ 헤더 ═══ */
 header{display:flex;align-items:center;gap:14px;padding:0 18px;height:54px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+
+/* ═══ 뷰 전환 배너 ═══ */
+.view-switcher{
+  display:flex;align-items:center;justify-content:center;
+  background:#252a3a;
+  flex-shrink:0;
+  padding:10px 16px;
+  z-index:101;
+  border-top:1px solid rgba(255,255,255,0.1);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.view-toggle{
+  display:flex;align-items:center;
+  background:#1a1d27;
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:30px;padding:4px;gap:2px;
+  box-shadow:0 4px 20px rgba(0,0,0,.6);
+}
+.view-tab{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 26px;border-radius:24px;
+  font-size:13px;font-weight:700;cursor:pointer;
+  color:rgba(255,255,255,0.45);transition:all .18s;
+  white-space:nowrap;user-select:none;
+  background:transparent;
+}
+.view-tab:hover{color:rgba(255,255,255,0.8)}
+.view-tab.active{
+  background:linear-gradient(135deg,#4f8cff,#6fa8ff);
+  color:#fff;
+  box-shadow:0 2px 14px rgba(79,140,255,.5);
+}
+.view-tab-icon{font-size:14px}
+
+@media(max-width:768px){
+  .view-tab{padding:7px 17px;font-size:12px;gap:4px}
+  .view-tab-icon{font-size:13px}
+  .board-grid{grid-template-columns:1fr}
+  #board-view{padding:12px}
+}
+/* ═══ 게시판 뷰 ═══ */
+#board-view{
+  display:none;flex:1;flex-direction:column;
+  overflow-y:auto;background:var(--bg);
+  padding:20px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+  -webkit-overflow-scrolling:touch;
+}
+.board-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.board-title{font-size:16px;font-weight:800;color:var(--text)}
+.board-count{font-size:12px;color:var(--text2)}
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.bcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .2s,transform .15s,background .2s;position:relative}
+.bcard:hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-2px)}
+.bcard-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.bcard-tags{display:flex;gap:4px;flex-wrap:wrap}
+.bcard-date{font-size:10px;color:var(--text3);white-space:nowrap;margin-top:2px}
+.bcard-name{font-size:14px;font-weight:800;margin-bottom:5px;line-height:1.4;color:var(--text)}
+.bcard-price{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.bcard-total{font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px}
+.bcard-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)}
+.bcard-addr{font-size:11px;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:3px}
+.bcard-fav{position:absolute;top:12px;right:12px;background:none;border:none;font-size:17px;cursor:pointer;opacity:.4;transition:opacity .2s,transform .2s;line-height:1}
+.bcard-fav:hover{opacity:1;transform:scale(1.2)}
+.bcard-fav.on{opacity:1}
+.board-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text2);gap:10px;font-size:14px}
+
 .logo{font-size:17px;font-weight:800;color:var(--accent);letter-spacing:-.5px;white-space:nowrap}
 .filters{display:flex;gap:7px;flex:1;overflow-x:auto;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
@@ -76,7 +143,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .hbtn.accent:hover{background:rgba(79,140,255,.22)}
 
 /* ═══ 메인 레이아웃 ═══ */
-.main{display:flex;flex:1;overflow:hidden}
+.main{display:flex;flex:1;overflow:hidden;position:relative}
 #map-wrap{flex:1;position:relative;overflow:hidden}
 #kakao-map{width:100%;height:100%}
 
@@ -271,6 +338,11 @@ select:hover,select:focus{border-color:var(--accent)}
   .fr4{grid-template-columns:1fr 1fr}
   .atable{display:block;overflow-x:auto;white-space:nowrap}
   .price-grid{grid-template-columns:1fr 1fr}
+  #board-view{padding:10px 12px}
+  .board-grid{grid-template-columns:1fr}
+  .bcard{padding:12px}
+  .view-tab{padding:7px 17px;font-size:12px;gap:4px}
+  .view-tab-icon{font-size:13px}
 
   /* 우측 패널 부동산 배너 1/3 크기 */
   .abc-banner{
@@ -506,6 +578,7 @@ select:hover,select:focus{border-color:var(--accent)}
       <select id="ff-period">
         <option value="all">전체</option>
         <option value="7">최근 1주일</option>
+        <option value="15">최근 15일</option>
         <option value="30">최근 1달</option>
         <option value="90">최근 3달</option>
         <option value="180">최근 6달</option>
@@ -547,8 +620,21 @@ select:hover,select:focus{border-color:var(--accent)}
   <div class="huser" id="huser"></div>
 </header>
 
+<!-- ═══ 뷰 전환 배너 ═══ -->
+<div class="view-switcher">
+  <div class="view-toggle">
+    <div class="view-tab active" id="vtab-map" onclick="switchView('map')">
+      <span class="view-tab-icon">🗺️</span> 지도로 보기
+    </div>
+    <div class="view-tab" id="vtab-board" onclick="switchView('board')">
+      <span class="view-tab-icon">📋</span> 게시판 보기
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 메인 ═══ -->
 <div class="main">
+  
   <div id="map-wrap">
     <div id="kakao-map"></div>
     <!-- 사무소 정보 카드 -->
@@ -615,6 +701,14 @@ select:hover,select:focus{border-color:var(--accent)}
       </div>
       <div class="panel-section hidden" id="sec-fav"></div>
     </div>
+  </div>
+
+  <!-- 게시판 뷰 (지도/패널과 같은 레벨) -->
+  <div id="board-view">
+    <div class="board-header">
+      <div class="board-title">📋 매물 게시판 <span class="board-count" id="board-count"></span></div>
+    </div>
+    <div class="board-grid" id="board-grid"></div>
   </div>
 </div>
 
@@ -934,6 +1028,199 @@ function filtered(){
 }
 
 // ════════════════════════════════════════════
+// 뷰 전환 (지도 / 게시판)
+// ════════════════════════════════════════════
+let currentView='map';
+function switchView(v){
+  currentView=v;
+  const mapWrapEl=document.getElementById('map-wrap');
+  const panelEl=document.querySelector('.panel');
+  const boardEl=document.getElementById('board-view');
+  document.getElementById('vtab-map').classList.toggle('active',v==='map');
+  document.getElementById('vtab-board').classList.toggle('active',v==='board');
+  if(v==='map'){
+    mapWrapEl.style.display='';
+    boardEl.style.display='none';
+    // 패널: 팝업이 열린 모바일이면 계속 숨김, 아니면 표시
+    if(panelEl){
+      const popupOpen=document.getElementById('dpop').classList.contains('show');
+      panelEl.style.display=(isMobileDevice()&&popupOpen)?'none':'';
+    }
+  } else {
+    // 게시판으로 전환 시 팝업 닫기
+    closePopupSilent();
+    activeId=null;activePopupItem=null;
+    mapWrapEl.style.display='none';
+    if(panelEl)panelEl.style.display='none';
+    boardEl.style.display='flex';
+    renderBoard();
+  }
+}
+
+function fmtDateAgo(ts){
+  if(!ts)return '';
+  const diff=Date.now()-ts;
+  const m=Math.floor(diff/60000);
+  const h=Math.floor(diff/3600000);
+  const d=Math.floor(diff/86400000);
+  if(m<1)return '방금 전';
+  if(m<60)return `${m}분 전`;
+  if(h<24)return `${h}시간 전`;
+  if(d<30)return `${d}일 전`;
+  const date=new Date(ts);
+  return `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function renderBoard(){
+  const items=filtered().slice().sort((a,b)=>(b.registeredAt||0)-(a.registeredAt||0));
+  const grid=document.getElementById('board-grid');
+  const countEl=document.getElementById('board-count');
+  countEl.textContent=`총 ${items.length}건`;
+  grid.innerHTML='';
+  if(!items.length){
+    grid.innerHTML='<div class="board-empty"><div style="font-size:40px;opacity:.3">🔍</div><div>조건에 맞는 매물이 없습니다</div></div>';
+    return;
+  }
+  items.forEach(item=>{
+    const isRent=item.deal==='월세';
+    const tot=isRent?(item.deposit||0)+(item.keymoney||0):0;
+    const isFav=favIds.includes(item.lid);
+    const card=document.createElement('div');
+    card.className='bcard';
+    card.innerHTML=`
+      <button class="bcard-fav ${isFav?'on':''}" onclick="event.stopPropagation();toggleFavBoard('${item.lid}',this)">${isFav?'❤️':'🤍'}</button>
+      <div class="bcard-top">
+        <div class="bcard-tags">
+          <span class="dtag ${item.type}">${item.type}</span>
+          <span class="dtag ${item.deal}">${item.deal}</span>
+        </div>
+        <div class="bcard-date">${fmtDateAgo(item.registeredAt)}</div>
+      </div>
+      <div class="bcard-name">${item.name}</div>
+      <div class="bcard-addr">📍 ${maskAddr(item)}</div>
+      <div class="bcard-price">${isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:won(item.price||0)}</div>
+      ${isRent?`<div class="bcard-total">합계 ${won(tot)} <span style="font-size:10px;opacity:.7">(보증금+권리금)</span></div>`:''}
+      <div class="bcard-meta">
+        <span>🚪 ${item.rooms||'-'}실</span>
+        ${item.area2?`<span>📐 ${item.area2}㎡</span>`:''}
+        <span>🏢 ${item.floor||'-'}층</span>
+        ${item.direction?`<span>🧭 ${item.direction}</span>`:''}
+      </div>`;
+    card.addEventListener('click',()=>showBoardDetail(item));
+    grid.appendChild(card);
+  });
+}
+
+function showBoardDetail(item){
+  const isRent=item.deal==='월세';
+  const tot=isRent?(item.deposit||0)+(item.keymoney||0):0;
+  const isFav=favIds.includes(item.lid);
+
+  // 가격 블록
+  let priceHtml='';
+  if(isRent){
+    priceHtml=`
+      <div class="price-grid">
+        <div class="price-cell"><div class="price-label">보증금</div><div class="price-val">${won(item.deposit||0)}</div></div>
+        <div class="price-cell"><div class="price-label">월세</div><div class="price-val">${won(item.monthly||0)}</div></div>
+        ${item.keymoney?`<div class="price-cell"><div class="price-label">권리금</div><div class="price-val">${won(item.keymoney)}</div></div>`:''}
+        <div class="price-cell highlight full"><div class="price-label">보증금+권리금 합계</div><div class="price-val" style="color:var(--red)">${won(tot)}</div></div>
+      </div>`;
+  } else {
+    priceHtml=`<div class="price-grid"><div class="price-cell full"><div class="price-label">매매가</div><div class="price-val">${won(item.price||0)}</div></div></div>`;
+  }
+  priceHtml+=`<div class="rooms-row">
+    <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
+    <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
+    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
+  </div>`;
+
+  // 담당자
+  let agentHtml='';
+  if(item.ownerId){
+    const owner=users.find(u=>u.id===item.ownerId);
+    if(owner) agentHtml=`<div class="agent-card"><div class="agent-card-title">📞 담당 공인중개사</div><div class="agent-body"><div class="agent-avatar">${owner.name[0]}</div><div><div class="agent-name">${owner.name}</div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><a class="agent-phone" href="tel:${owner.phone}" style="text-decoration:none;display:block">${owner.phone} 📲</a></div></div></div>`;
+  } else {
+    agentHtml=`<div class="agent-card" style="text-align:center;color:var(--text2);font-size:12px;padding:14px">문의: 관리자에게 연락하세요</div>`;
+  }
+
+  const html=`
+    <div class="overlay" id="bd-overlay" onclick="if(event.target===this)closeBoardDetail()" style="z-index:650">
+      <div class="modal modal-wide" style="max-height:88vh;overflow-y:auto;padding:0;border-radius:20px" onclick="event.stopPropagation()">
+        <!-- 헤더 -->
+        <div class="dpop-header" style="border-radius:20px 20px 0 0">
+          <div class="dpop-actions">
+            <button onclick="toggleFavBoardDetail('${item.lid}',this)" style="background:none;border:none;font-size:20px;cursor:pointer;line-height:1;transition:transform .2s" id="bdfav-btn">${isFav?'❤️':'🤍'}</button>
+            <button onclick="closeBoardDetail()" style="background:none;border:none;color:var(--text2);font-size:17px;cursor:pointer;line-height:1">✕</button>
+          </div>
+          <div class="dpop-tags">
+            <span class="dtag ${item.type}">${item.type}</span>
+            <span class="dtag ${item.deal}">${item.deal}</span>
+          </div>
+          <div class="dpop-name">${item.name}</div>
+          <div class="dpop-addr">📍 ${maskAddr(item)}</div>
+        </div>
+        <!-- 가격 -->
+        <div class="dpop-price-block">${priceHtml}</div>
+        ${item.desc&&item.desc.trim()?`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text">${item.desc}</div></div>`:''}
+        <!-- 상세 정보 -->
+        <div class="dpop-info-block">
+          <div class="dpop-info-title">📋 중개대상물 표시 정보</div>
+          <table class="info-table">
+            <tr><td>중개대상물 종류</td><td>${item.type}</td></tr>
+            <tr><td>중개거래형태</td><td>${item.deal}</td></tr>
+            <tr><td>소재지</td><td>${maskAddr(item)}</td></tr>
+            <tr><td>면적</td><td>${item.area2?item.area2+'㎡':'-'}</td></tr>
+            <tr><td>해당 층수</td><td>${item.floor?item.floor+'층':'-'}</td></tr>
+            <tr><td>총 층수</td><td>${item.totalfloor?item.totalfloor+'층':'-'}</td></tr>
+            <tr><td>방 갯수</td><td>${item.rooms?item.rooms+'실':'-'}</td></tr>
+            <tr><td>욕실 갯수</td><td>${item.baths?item.baths+'개':'-'}</td></tr>
+            <tr><td>방향</td><td>${item.direction||'-'}</td></tr>
+            <tr><td>주차대수</td><td>${item.parking!=null?item.parking+'대':'-'}</td></tr>
+            <tr><td>관리비</td><td>${item.maintenance?won(item.maintenance)+'/월':'-'}</td></tr>
+            <tr><td>입주가능일</td><td>${item.movein||'협의'}</td></tr>
+            <tr><td>사용승인일</td><td>${item.approvedate||'-'}</td></tr>
+            <tr><td>준공연도</td><td>${item.year?item.year+'년':'-'}</td></tr>
+            <tr><td>위반건축물</td><td style="${item.illegal==='위반건축물'?'color:var(--red);font-weight:700':''}">${item.illegal||'해당없음'}</td></tr>
+          </table>
+        </div>
+        <!-- 담당자 -->
+        <div class="dpop-agent-block">${agentHtml}</div>
+        <!-- 지도에서 보기 버튼 -->
+        <div style="padding:14px 18px">
+          <button onclick="closeBoardDetail();switchView('map');activeId='${item.lid}';activePopupItem=${JSON.stringify(item).replace(/'/g,"&#39;")};setTimeout(()=>{render();showPopup(${JSON.stringify(item).replace(/'/g,"&#39;")});},150)"
+            style="width:100%;background:rgba(79,140,255,.12);border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">
+            🗺️ 지도에서 위치 보기
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+function closeBoardDetail(){
+  const el=document.getElementById('bd-overlay');
+  if(el)el.remove();
+}
+function toggleFavBoardDetail(lid,btn){
+  const idx=favIds.indexOf(lid);
+  if(idx>=0)favIds.splice(idx,1);else favIds.push(lid);
+  try{localStorage.setItem('favIds',JSON.stringify(favIds));}catch(e){}
+  btn.textContent=favIds.includes(lid)?'❤️':'🤍';
+  updateFavBadge();
+  // 게시판 카드 하트도 동기화
+  renderBoard();
+}
+
+function toggleFavBoard(lid,btn){
+  const idx=favIds.indexOf(lid);
+  if(idx>=0)favIds.splice(idx,1);else favIds.push(lid);
+  try{localStorage.setItem('favIds',JSON.stringify(favIds));}catch(e){}
+  btn.textContent=favIds.includes(lid)?'❤️':'🤍';
+  btn.classList.toggle('on',favIds.includes(lid));
+  updateFavBadge();
+}
+
+// ════════════════════════════════════════════
 // 탭 / 패널
 // ════════════════════════════════════════════
 let currentTab='list';
@@ -1052,12 +1339,6 @@ function renderPins(coordMap){
             showPopup(item);
             kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
             if(currentTab!=='list')switchTab('list');
-            // 모바일: 패널 숨기고 팝업 표시
-            if(isMobileDevice()){
-              document.querySelector('.panel').style.display='none';
-              const mw=document.getElementById('map-wrap');
-              if(mw){mw.style.flex='1';mw.style.height='100%';}
-            }
             setTimeout(()=>{
               const card=document.getElementById('card-'+item.lid);
               if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1325,9 +1606,10 @@ function isMobileDevice(){
 function closePopup(){
   document.getElementById('dpop').classList.remove('show');
   activeId=null;activePopupItem=null;clusterFilterIds=null;
-  // 모바일: 패널 다시 보이기
-  if(isMobileDevice()){
-    document.querySelector('.panel').style.display='';
+  // 모바일: 패널 다시 보이기 (지도 뷰일 때만)
+  if(isMobileDevice()&&currentView==='map'){
+    const panelEl=document.querySelector('.panel');
+    if(panelEl)panelEl.style.display='';
     const mapWrap=document.getElementById('map-wrap');
     if(mapWrap){mapWrap.style.flex='';mapWrap.style.height='';}
   }
@@ -1335,9 +1617,9 @@ function closePopup(){
 }
 function closePopupSilent(){document.getElementById('dpop').classList.remove('show');}
 
-['ff-type','ff-deal','ff-price','ff-period','ff-rooms'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();}));
-document.getElementById('ff-area').addEventListener('change',()=>{updateHeaderDong();activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();});
-document.getElementById('ff-dong').addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();});
+['ff-type','ff-deal','ff-price','ff-period','ff-rooms'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();}));
+document.getElementById('ff-area').addEventListener('change',()=>{updateHeaderDong();activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();});
+document.getElementById('ff-dong').addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();});
 
 // ════════════════════════════════════════════
 // 헤더 렌더
@@ -1527,7 +1809,6 @@ function renderAMembers(){
 }
 function renderAListings(){
   const el=document.getElementById('as-listings');
-  // 모든 매물 (숨긴 것 포함) — BASE + 유저 listings
   const all=[
     ...BASE.map(b=>({...b,ownerId:null})),
     ...users.flatMap(u=>{
@@ -1540,15 +1821,21 @@ function renderAListings(){
     <thead><tr><th>노출</th><th>종류</th><th>매물명</th><th>위치</th><th>거래</th><th>가격</th><th>담당자</th><th>관리</th></tr></thead>
     <tbody>${all.map(item=>{
       const isHidden=!!item.hidden;
-      return `<tr style="${isHidden?'opacity:.45':''}">
+      return `<tr style="${isHidden?'opacity:.5':''}">
         <td>
-          <button onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
-            style="background:${isHidden?'rgba(255,107,107,.18)':'rgba(62,207,142,.18)'};
-                   color:${isHidden?'var(--red)':'var(--green)'};
-                   border:1px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};
-                   border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
-            ${isHidden?'🙈 숨김':'👁 노출'}
-          </button>
+          <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
+            style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.2);transition:all .2s">
+            <span style="padding:4px 11px;border-radius:16px;font-size:11px;font-weight:700;transition:all .18s;
+              background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};
+              color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">
+              👁 노출
+            </span>
+            <span style="padding:4px 11px;border-radius:16px;font-size:11px;font-weight:700;transition:all .18s;
+              background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};
+              color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">
+              🙈 숨김
+            </span>
+          </div>
         </td>
         <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
         <td style="font-weight:600;font-size:12px">${item.name}</td>
