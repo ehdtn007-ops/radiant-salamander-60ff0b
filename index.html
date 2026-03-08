@@ -476,6 +476,7 @@ select:hover,select:focus{border-color:var(--accent)}
   .hbtn{padding:4px 10px;font-size:11px}
 }
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -916,7 +917,7 @@ select:hover,select:focus{border-color:var(--accent)}
       <!-- 담당자 -->
       <div class="dpop-agent-block" id="dp-agent"></div>
       <div style="padding:10px 14px 14px">
-        <button id="dp-cafe-btn" onclick="copyCafePost(activePopupItem,this)" style="width:100%;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📝 카페 글 양식 복사</button>
+        <button id="dp-cafe-btn" onclick="copyCafePost(activePopupItem,this)" style="width:100%;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📝 카페 글 양식 이미지 저장</button>
       </div>
     </div>
 
@@ -1549,7 +1550,7 @@ function showBoardDetail(item){
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
           <button onclick="copyCafePost(window._bdItem,this)"
             style="width:100%;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-            📝 카페 글 양식 복사
+            📝 카페 글 양식 이미지 저장
           </button>
           <button onclick="openSharePopupFor(window._bdItem)"
             style="width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
@@ -2886,58 +2887,90 @@ function _fbCopy(text,cb){
 }
 function copyCafePost(item,btn){
   if(!item)return;
+  if(btn){btn.innerHTML='⏳ 생성 중...';btn.disabled=true;}
+
   const isRent=item.deal==='월세';
   const km=item.keymoney||0;
-  const baseUrl='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/';
-  const link=baseUrl+'?lid='+item.lid;
+  const tot=isRent?(item.deposit||0)+km:(item.price||0)+km;
 
-  const priceLines=isRent
-    ?[
-      `💰 보증금: ${won(item.deposit||0)}`,
-      `💵 월세: ${won(item.monthly||0)}`,
-      km>0?`💳 권리금: ${won(km)}`:'',
-      `📊 합계(보증금+권리금): ${won((item.deposit||0)+km)}`,
-    ].filter(Boolean)
-    :[
-      `💰 매매가: ${won(item.price||0)}`,
-      km>0?`💳 권리금: ${won(km)}`:'',
-      km>0?`📊 합계(매매가+권리금): ${won((item.price||0)+km)}`:'',
-    ].filter(Boolean);
-
-  const lines=[
-    `📌 [${item.deal}] ${item.name}`,
-    ``,
-    `📍 위치: ${maskAddr(item)}`,
-    `🏠 종류: ${item.type}`,
-    ``,
-    ...priceLines,
-    item.maintenance?`🏢 관리비: ${won(item.maintenance)}/월`:'',
-    ``,
-    item.rooms?`🚪 방 갯수: ${item.rooms}실`:'',
-    item.area2?`📐 면적: ${item.area2}㎡`:'',
-    item.floor?`🏢 층수: ${item.floor}층 / 총 ${item.totalfloor||'-'}층`:'',
-    item.direction?`🧭 방향: ${item.direction}`:'',
-    item.parking!=null?`🅿️ 주차: ${item.parking}대`:'',
-    item.approvedate?`📅 사용승인일: ${item.approvedate}`:'',
-    item.year?`🏗️ 준공연도: ${item.year}년`:'',
-    `✅ 위반건축물: ${item.illegal||'해당없음'}`,
-    item.movein?`🗓️ 입주가능일: ${item.movein}`:'',
-    ``,
-    item.desc&&item.desc.trim()?`✏️ 매물 특징\n${item.desc}\n`:'',
-    `📞 문의: 첫번째공인중개사사무소`,
-    `☎️ 02-6404-5455`,
-    `🔗 매물 링크: ${link}`,
-  ].filter(v=>v!==null&&v!==undefined);
-
-  const text=lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-
-  _doClipboard(text,btn);
-  if(btn){
-    const orig=btn.innerHTML;
-    btn.innerHTML='✅ 복사됐습니다!';
-    btn.style.background='linear-gradient(135deg,#2bb87a,#1a8a5a)';
-    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},2000);
+  // 담당자 정보
+  let agentPhone='02-6404-5455', agentName='';
+  if(item.ownerId){
+    const owner=users.find(u=>u.id===item.ownerId);
+    if(owner){
+      agentPhone=owner.phone||'02-6404-5455';
+      agentName=owner.name||'';
+    }
   }
+
+  // 양식 rows
+  const rows=[
+    ['지 역', maskAddr(item)],
+    isRent?['보 증 금', won(item.deposit||0)]:['매 매 가', won(item.price||0)],
+    isRent?['임 대 료', won(item.monthly||0)]:null,
+    ['권 리 금', km>0?won(km):'-'],
+    ['합 금 액', won(tot)],
+    ['방', (item.rooms||'-')+'실'],
+    ['관 리 비', item.maintenance?won(item.maintenance)+'/월':'-'],
+    ['중개대상물종류', item.type],
+    ['중개거래형태, 입주가능일 승인일자', `${item.deal}(${isRent?'월세':'매매'}), ${item.movein||'협의'} 입주`],
+    ['주차대수, 방향', [item.parking!=null?item.parking+'대':'', item.direction||''].filter(Boolean).join(', ')||'-'],
+    ['해당 층수,\n면적 중개거래형태', [item.floor?item.floor+'층':'', item.area2?item.area2+'㎡':'', item.deal].filter(Boolean).join(' ')],
+    ['설 명', item.desc||''],
+  ].filter(Boolean);
+
+  const rowsHtml=rows.map(([k,v])=>`
+    <tr>
+      <td style="width:160px;padding:11px 15px;font-size:15px;font-weight:700;color:#7b3a10;border:1px solid #e8c4a0;background:#fde8d8;vertical-align:top;white-space:pre-wrap;letter-spacing:-0.3px">${k}</td>
+      <td style="padding:11px 15px;font-size:15px;color:#1a1a1a;border:1px solid #e8c4a0;background:#fff;vertical-align:top;white-space:pre-wrap;line-height:1.8">${v}</td>
+    </tr>`).join('');
+
+  const tpl=`
+  <div id="_cafe_tpl" style="font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:#fff;padding:20px;width:620px;box-sizing:border-box">
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e8c4a0;margin-bottom:20px">
+      ${rowsHtml}
+    </table>
+    <div style="font-size:13px;color:#555;line-height:2.1;padding:6px 2px;border-top:1px solid #e8c4a0;margin-top:4px">
+      <div>◎ 중개업체명 : 첫번째공인중개사사무소</div>
+      <div>◎ 대표 : 장혜정</div>
+      <div>◎ 중개사무실 위치 : 서울특별시 중구 을지로9길 8 7층</div>
+      <div>◎ 등록번호 : 11140-2025-00057</div>
+      <div>◎ TEL : ${agentPhone}</div>
+    </div>
+  </div>`;
+
+  // 숨겨진 div에 렌더링
+  let wrap=document.getElementById('_cafe_wrap');
+  if(!wrap){
+    wrap=document.createElement('div');
+    wrap.id='_cafe_wrap';
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;background:#fff';
+    document.body.appendChild(wrap);
+  }
+  wrap.innerHTML=tpl;
+
+  const el=document.getElementById('_cafe_tpl');
+  html2canvas(el,{
+    scale:2,
+    backgroundColor:'#ffffff',
+    useCORS:true,
+    logging:false,
+  }).then(canvas=>{
+    canvas.toBlob(blob=>{
+      // 이미지 다운로드
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=`매물_${item.name||'정보'}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      wrap.innerHTML='';
+      if(btn){btn.innerHTML='✅ 저장됐습니다!';btn.disabled=false;setTimeout(()=>{btn.innerHTML='📝 카페 글 양식 이미지 저장';},2500);}
+    },'image/png');
+  }).catch(e=>{
+    console.error(e);
+    if(btn){btn.innerHTML='❌ 오류 발생';btn.disabled=false;setTimeout(()=>{btn.innerHTML='📝 카페 글 양식 이미지 저장';},2000);}
+  });
 }
 
 function copyShareUrl(){
