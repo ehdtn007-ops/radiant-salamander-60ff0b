@@ -2224,9 +2224,13 @@ function renderAListings(){
   el.innerHTML=`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
     <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
       <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;border:1px solid var(--border2);border-radius:7px;padding:4px 9px;white-space:nowrap">
+        <input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px">
+        전체선택
+      </label>
     </div>
   </div>
   ${!filtered.length&&all.length?'<div style="color:var(--text2);padding:24px;text-align:center">조건에 맞는 매물이 없습니다</div>':!all.length?'<div style="color:var(--text2);padding:24px;text-align:center">등록된 매물이 없습니다</div>':`
@@ -2234,10 +2238,7 @@ function renderAListings(){
   <table class="atable" style="min-width:900px">
     <thead>
       <tr style="border-bottom:none">
-        <th style="width:110px">
-          전체선택<br>
-          <input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px;margin-top:5px">
-        </th>
+        <th style="width:110px">노출</th>
         <th style="width:90px">
           담당자
           <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
@@ -2262,6 +2263,7 @@ function renderAListings(){
         <th style="width:120px">가격</th>
         <th style="width:60px">등록일</th>
         <th style="width:160px">관리</th>
+        <th style="width:40px"></th>
       </tr>
     </thead>
     <tbody>${filtered.map(item=>{
@@ -2269,13 +2271,10 @@ function renderAListings(){
       const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
       return `<tr style="${isHidden?'opacity:.5':''}">
         <td>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-            <input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px">
-            <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
-              style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
-              <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">👁 노출</span>
-              <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">🙈 숨김</span>
-            </div>
+          <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
+            style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
+            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">👁 노출</span>
+            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">🙈 숨김</span>
           </div>
         </td>
         <td style="font-size:11px;font-weight:700;color:var(--accent)">${item.ownerName||'기본'}</td>
@@ -2292,6 +2291,7 @@ function renderAListings(){
             ?`<button class="btn btn-sm btn-red" onclick="delListing('${item.ownerId}','${item.lid}')">삭제</button>`
             :`<button class="btn btn-sm btn-red" onclick="delBaseListing('${item.lid}')">삭제</button>`}
         </td>
+        <td style="text-align:center"><input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px"></td>
       </tr>`;
     }).join('')}</tbody>
   </table>
