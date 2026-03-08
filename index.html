@@ -2599,25 +2599,41 @@ async function fetchBldgInfo(prefix='el'){
     const item1=json1?.response?.body?.items?.item;
     d=Array.isArray(item1)?item1[0]:item1;
 
-    // 3단계: 일반건축물 결과 없으면 집합건물 API 시도
+    // 3단계: 일반건축물 결과 없으면 → 집합건물 알림 후 전환
     if(!d){
       isApt=true;
+
+      // 일반건축물로 선택했었다면 알림 + 집합건물로 UI 전환
+      const selectedType=document.querySelector(`input[name="${p}-btype"]:checked`)?.value;
+      if(selectedType==='general'){
+        resultEl.innerHTML='⚠️ 일반건축물 정보가 없습니다. 집합건물로 전환하여 다시 조회합니다...';
+        // UI를 집합건물로 전환
+        const aptRadio=document.querySelector(`input[name="${p}-btype"][value="apt"]`);
+        if(aptRadio){aptRadio.checked=true; toggleBldgType(p);}
+        // 동/호수 입력 안내
+        await new Promise(resolve=>{
+          alert('🏢 집합건물로 확인되었습니다.\n동·호수를 입력하면 더 정확한 정보를 가져올 수 있습니다.\n(없으면 그냥 확인을 누르세요)');
+          resolve();
+        });
+      }
+
       const res2=await fetch(baseUrl+'/getBrRecapTitleInfo'+commonParam);
       const json2=await res2.json();
       const item2=json2?.response?.body?.items?.item;
       d=Array.isArray(item2)?item2[0]:item2;
 
-      // 집합건물 호별 정보도 조회 (동호수 있으면)
-      if(d&&(bldgdong||hosu)){
-        const floorParam=`&dongNm=${encodeURIComponent(bldgdong.replace(/동$/,''))}&hoNm=${encodeURIComponent(hosu.replace(/호$/,''))}`;
+      // 집합건물 호별 정보도 조회 (동호수 있으면 - 알림 후 입력했을 수도 있으므로 재조회)
+      const bldgdongNow=document.getElementById(p+'bldgdong')?.value.trim()||'';
+      const hosuNow=document.getElementById(p+'hosu')?.value.trim()||'';
+      if(d&&(bldgdongNow||hosuNow)){
+        const floorParam=`&dongNm=${encodeURIComponent(bldgdongNow.replace(/동$/,''))}&hoNm=${encodeURIComponent(hosuNow.replace(/호$/,''))}`;
         const res3=await fetch(baseUrl+'/getBrExposPubuseAreaInfo'+commonParam+floorParam);
         const json3=await res3.json();
         const item3=json3?.response?.body?.items?.item;
         const d3=Array.isArray(item3)?item3[0]:item3;
         if(d3){
-          // 호별 전용면적으로 덮어쓰기
           if(d3.area)d.totArea=d3.area;
-          if(d3.flrNo)d.grndFlrCnt_ho=d3.flrNo; // 해당 층수
+          if(d3.flrNo)d.grndFlrCnt_ho=d3.flrNo;
         }
       }
     }
