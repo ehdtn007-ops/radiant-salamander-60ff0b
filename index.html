@@ -1219,7 +1219,15 @@ function showABCPopup(){
   document.getElementById('dp-addr').innerHTML='📍 서울특별시 중구 을지로9길 8 7층';
   document.getElementById('dp-price-block').innerHTML=`<div style="text-align:center;padding:8px 0"><a href="tel:02-6404-5455" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1));border:1.5px solid rgba(255,100,0,.5);border-radius:14px;padding:12px 28px;text-decoration:none;color:#ff8c00;font-size:15px;font-weight:800;transition:all .2s" onmouseover="this.style.background='linear-gradient(135deg,rgba(255,100,0,.3),rgba(255,140,0,.2))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1))'">📞 방문 상담 환영 &nbsp;|&nbsp; 02-6404-5455</a></div>`;
   document.getElementById('dp-desc-block').style.display='none';
-  document.getElementById('dp-info-block').innerHTML=`<div class="dpop-info-title">📋 사무소 정보</div><table class="info-table"><tr><td>주소</td><td>서울특별시 중구 을지로9길 8 7층</td></tr><tr><td>대표</td><td>장혜정</td></tr><tr><td>등록번호</td><td>11140-2025-00057</td></tr><tr><td>TEL</td><td><a href="tel:02-6404-5455" style="color:var(--green);font-weight:700;text-decoration:none">02-6404-5455 📲</a></td></tr><tr><td>운영시간</td><td>평일 09:00 ~ 18:00</td></tr></table>`;
+  document.getElementById('dp-info-block').innerHTML=`<div class="dpop-info-title">📋 사무소 정보</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;padding:4px 0">
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">중개업체명</span><span style="color:var(--text);font-weight:600">첫번째공인중개사무소</span></div>
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">대표</span><span style="color:var(--text);font-weight:600">장혜정</span></div>
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">위치</span><span style="color:var(--text);font-weight:600">서울특별시 중구 을지로9길 8 7층</span></div>
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">등록번호</span><span style="color:var(--text);font-weight:600">11140-2025-00057</span></div>
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">TEL</span><span><a href="tel:02-6404-5455" style="color:var(--green);font-weight:700;text-decoration:none">02-6404-5455 📲</a></span></div>
+      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">운영시간</span><span style="color:var(--text);font-weight:600">평일 09:00 ~ 18:00</span></div>
+    </div>`;
   document.getElementById('dp-agent').innerHTML='';
   document.getElementById('dpop-fav').style.visibility='hidden';
   document.getElementById('dpop').classList.add('show');
