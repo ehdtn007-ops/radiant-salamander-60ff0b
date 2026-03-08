@@ -2602,7 +2602,7 @@ function shareKakao(){
   if(!item)return;
   // GitHub Pages 배포 주소 고정 (카카오 등록 도메인과 일치해야 링크 작동)
   const baseUrl='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b';
-  const url=`${baseUrl}/index.html?lid=${item.lid}`;
+  const url=`${baseUrl}/?lid=${item.lid}`;
   const isRent=item.deal==='월세';
   const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
 
