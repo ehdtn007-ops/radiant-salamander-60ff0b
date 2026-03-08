@@ -1787,7 +1787,7 @@ function showClusterPopup(items,lat,lng){
     </div>
     <div class="cl-popup-body">${rows}</div>
   </div>`;
-  clusterOverlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:html,yAnchor:1.1,zIndex:30});
+  clusterOverlay=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:html,yAnchor:1.1,zIndex:9999});
   clusterOverlay.setMap(kakaoMap);
   // 카카오맵이 overlay 클릭 이벤트 가로채지 않도록 처리
   setTimeout(()=>{
