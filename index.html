@@ -2224,30 +2224,37 @@ function renderAListings(){
   const selStyle=`background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit;cursor:pointer;outline:none;width:100%;margin-top:4px`;
 
   el.innerHTML=`
-  <div style="font-size:12px;color:var(--text2);margin-bottom:8px">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
+      <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
+    </div>
+  </div>
   ${!filtered.length&&all.length?'<div style="color:var(--text2);padding:24px;text-align:center">조건에 맞는 매물이 없습니다</div>':!all.length?'<div style="color:var(--text2);padding:24px;text-align:center">등록된 매물이 없습니다</div>':`
   <div style="overflow-x:auto">
   <table class="atable" style="min-width:900px">
     <thead>
       <tr style="border-bottom:none">
+        <th style="width:32px"><input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px"></th>
         <th style="width:110px">노출</th>
         <th style="width:90px">
           담당자
           <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
             <option value="전체">전체</option>
-            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>${n}</option>`).join('')}
+            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>` + "${n}</option>`).join('')}
           </select>
         </th>
         <th style="width:80px">
           종류
           <select id="alf-type" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>${v}</option>`).join('')}
+            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>` + "${v}</option>`).join('')}
           </select>
         </th>
         <th style="width:70px">
           거래
           <select id="alf-deal" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>${v}</option>`).join('')}
+            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>` + "${v}</option>`).join('')}
           </select>
         </th>
         <th>매물명</th>
@@ -2261,6 +2268,7 @@ function renderAListings(){
       const isHidden=!!item.hidden;
       const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
       return `<tr style="${isHidden?'opacity:.5':''}">
+        <td><input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px"></td>
         <td>
           <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
             style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
@@ -2285,8 +2293,39 @@ function renderAListings(){
       </tr>`;
     }).join('')}</tbody>
   </table>
-  </div>`}`;
+  </div>`}\`;
 }
+function bulkRefreshToday(){
+  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
+  if(!items.length){alert('선택된 매물이 없습니다.');return;}
+  if(!confirm(`선택한 ${items.length}건의 등록일을 오늘로 갱신할까요?`))return;
+  const now=Date.now();
+  items.forEach(({lid,ownerId})=>{
+    if(ownerId){
+      const u=users.find(u=>u.id===ownerId);
+      if(u&&u.listings){const l=u.listings.find(l=>l.lid===lid);if(l){l.registeredAt=now;db.collection('users').doc(u.id).set(u).catch(e=>{});}}
+    } else {
+      const b=BASE.find(b=>b.lid===lid);
+      if(b){b.registeredAt=now;db.collection('base_listings').doc(lid).update({registeredAt:now}).catch(e=>{});}
+    }
+  });
+  renderAListings();
+}
+function bulkDelete(){
+  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
+  if(!items.length){alert('선택된 매물이 없습니다.');return;}
+  if(!confirm(`선택한 ${items.length}건을 삭제할까요? 되돌릴 수 없습니다.`))return;
+  items.forEach(({lid,ownerId})=>{
+    if(ownerId){
+      const u=users.find(u=>u.id===ownerId);
+      if(u&&u.listings){u.listings=u.listings.filter(l=>l.lid!==lid);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+    } else {
+      const idx=BASE.findIndex(b=>b.lid===lid);
+      if(idx>=0){BASE.splice(idx,1);db.collection('base_listings').doc(lid).delete().catch(e=>{});}
+    }
+  });
+  renderAListings();render();
+
 function toggleListingHidden(ownerId,lid){
   if(ownerId){
     const u=users.find(u=>u.id===ownerId);
