@@ -2600,7 +2600,7 @@ function shareKakao(){
   if(!item)return;
   // GitHub Pages 배포 주소 고정 (카카오 등록 도메인과 일치해야 링크 작동)
   const baseUrl='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b';
-  const url=`${baseUrl}/?lid=${item.lid}`;
+  const url=`${baseUrl}/#lid=${item.lid}`;
   const isRent=item.deal==='월세';
   const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
 
@@ -2640,8 +2640,13 @@ function _shareToast(){
 // URL 파라미터로 매물 자동 오픈 (loadFromFirebase 완료 후 호출됨)
 function checkUrlLid(){
   try{
+    // 쿼리스트링(?lid=) 또는 해시(#lid=) 둘 다 지원
     const params=new URLSearchParams(location.search);
-    const lid=params.get('lid');
+    let lid=params.get('lid');
+    if(!lid && location.hash){
+      const hashParams=new URLSearchParams(location.hash.replace('#',''));
+      lid=hashParams.get('lid');
+    }
     if(!lid)return;
     const item=buildAll().find(i=>i.lid===lid);
     if(item){
