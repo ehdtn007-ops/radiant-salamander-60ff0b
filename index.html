@@ -13,6 +13,12 @@
 <!-- 카카오 공유 -->
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <script>
+// 카카오 JavaScript 앱키로 SDK 초기화
+if(window.Kakao && !Kakao.isInitialized()){
+  Kakao.init('101abfc1122832bf82c274c879984a27');
+}
+</script>
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJ90L8kSbfEhEfxJ_A1Bb5UPDQZhFFKkE",
   authDomain: "bssbs-25cc1.firebaseapp.com",
@@ -43,7 +49,7 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:32px 28px;width:460px;max-width:96vw;position:relative;animation:slideUp .22s}
 .modal-wide{width:560px}
-.modal-xl{width:760px;max-height:90vh;overflow-y:auto}
+.modal-xl{width:min(1200px,96vw);max-height:92vh;overflow-y:auto}
 .modal-title{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px}
 .modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
 .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;transition:color .15s;z-index:2}
@@ -349,7 +355,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .atab.active{background:var(--surface2);color:var(--text);border-color:var(--border)}
 .asec{display:none}.asec.active{display:block}
 .atable{width:100%;border-collapse:collapse;font-size:12px}
-.atable th{text-align:left;padding:7px 9px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+.atable th{text-align:left;padding:7px 9px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:.5px;text-transform:uppercase;vertical-align:top}
 .atable td{padding:9px 9px;border-bottom:1px solid var(--border);vertical-align:middle}
 .atable tr:last-child td{border-bottom:none}
 .atable tr:hover td{background:rgba(255,255,255,.015)}
@@ -2184,40 +2190,81 @@ function renderAMembers(){
 function renderAListings(){
   const el=document.getElementById('as-listings');
   const all=[
-    ...BASE.map(b=>({...b,ownerId:null})),
+    ...BASE.map(b=>({...b,ownerId:null,ownerName:'기본',ownerPhone:''})),
     ...users.flatMap(u=>{
       if(u.role==='master'||!u.listings)return[];
       return u.listings.map(l=>({...l,ownerId:u.id,ownerName:u.name,ownerPhone:u.phone}));
     })
   ];
-  if(!all.length){el.innerHTML='<div style="color:var(--text2);padding:24px;text-align:center">등록된 매물이 없습니다</div>';return;}
-  el.innerHTML=`<table class="atable">
-    <thead><tr><th>노출</th><th>종류</th><th>매물명</th><th>위치</th><th>거래</th><th>가격</th><th>담당자</th><th>등록일</th><th>관리</th></tr></thead>
-    <tbody>${all.map(item=>{
+
+  // 담당자 목록 수집
+  const ownerNames=[...new Set(all.map(i=>i.ownerName||'기본'))];
+
+  // 현재 필터 값 읽기
+  const fOwner=document.getElementById('alf-owner')?.value||'전체';
+  const fType =document.getElementById('alf-type')?.value||'전체';
+  const fDeal =document.getElementById('alf-deal')?.value||'전체';
+
+  const filtered=all.filter(item=>{
+    if(fOwner!=='전체'&&(item.ownerName||'기본')!==fOwner)return false;
+    if(fType!=='전체'&&item.type!==fType)return false;
+    if(fDeal!=='전체'&&item.deal!==fDeal)return false;
+    return true;
+  });
+
+  const selStyle=`background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit;cursor:pointer;outline:none;width:100%;margin-top:4px`;
+
+  el.innerHTML=`
+  <div style="font-size:12px;color:var(--text2);margin-bottom:8px">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
+  ${!filtered.length&&all.length?'<div style="color:var(--text2);padding:24px;text-align:center">조건에 맞는 매물이 없습니다</div>':!all.length?'<div style="color:var(--text2);padding:24px;text-align:center">등록된 매물이 없습니다</div>':`
+  <div style="overflow-x:auto">
+  <table class="atable" style="min-width:900px">
+    <thead>
+      <tr style="border-bottom:none">
+        <th style="width:110px">노출</th>
+        <th style="width:90px">
+          담당자
+          <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
+            <option value="전체">전체</option>
+            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </th>
+        <th style="width:80px">
+          종류
+          <select id="alf-type" style="${selStyle}" onchange="renderAListings()">
+            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>${v}</option>`).join('')}
+          </select>
+        </th>
+        <th style="width:70px">
+          거래
+          <select id="alf-deal" style="${selStyle}" onchange="renderAListings()">
+            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>${v}</option>`).join('')}
+          </select>
+        </th>
+        <th>매물명</th>
+        <th style="width:130px">위치</th>
+        <th style="width:120px">가격</th>
+        <th style="width:60px">등록일</th>
+        <th style="width:160px">관리</th>
+      </tr>
+    </thead>
+    <tbody>${filtered.map(item=>{
       const isHidden=!!item.hidden;
-      const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/')+''.replace('.',''): '-';
+      const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
       return `<tr style="${isHidden?'opacity:.5':''}">
         <td>
           <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
-            style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.2);transition:all .2s">
-            <span style="padding:4px 11px;border-radius:16px;font-size:11px;font-weight:700;transition:all .18s;
-              background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};
-              color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">
-              👁 노출
-            </span>
-            <span style="padding:4px 11px;border-radius:16px;font-size:11px;font-weight:700;transition:all .18s;
-              background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};
-              color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">
-              🙈 숨김
-            </span>
+            style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
+            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">👁 노출</span>
+            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">🙈 숨김</span>
           </div>
         </td>
+        <td style="font-size:11px;font-weight:700;color:var(--accent)">${item.ownerName||'기본'}</td>
         <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
+        <td><span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span></td>
         <td style="font-weight:600;font-size:12px">${item.name}</td>
         <td style="color:var(--text2);font-size:11px">${maskAddr(item)}</td>
-        <td><span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span></td>
         <td style="font-size:11px">${fmtPrice(item)}</td>
-        <td style="font-size:11px;font-weight:600">${item.ownerId?(users.find(u=>u.id===item.ownerId)||{name:'?'}).name:'기본'}</td>
         <td style="font-size:11px;color:var(--text2)">${regDate}</td>
         <td style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="openEditListingAdmin('${item.ownerId||''}','${item.lid}')">✏️수정</button>
@@ -2228,7 +2275,8 @@ function renderAListings(){
         </td>
       </tr>`;
     }).join('')}</tbody>
-  </table>`;
+  </table>
+  </div>`}`;
 }
 function toggleListingHidden(ownerId,lid){
   if(ownerId){
@@ -2555,14 +2603,24 @@ function shareKakao(){
   const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
   const isRent=item.deal==='월세';
   const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
-  const shareText=`${item.name}\n${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`;
 
-  // 모바일: Web Share API → 카카오톡 포함 모든 앱 공유 (앱키 불필요)
-  if(navigator.share){
-    navigator.share({title:item.name, text:shareText, url}).catch(()=>{});
-    return;
+  // 카카오 SDK로 직접 공유 (모바일: 카카오톡 앱 열림 / PC: 카카오톡 공유 팝업)
+  if(window.Kakao && Kakao.isInitialized() && Kakao.Share){
+    try{
+      Kakao.Share.sendDefault({
+        objectType:'feed',
+        content:{
+          title:item.name,
+          description:`${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
+          imageUrl:'https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png',
+          link:{mobileWebUrl:url, webUrl:url}
+        },
+        buttons:[{title:'매물 보기', link:{mobileWebUrl:url, webUrl:url}}]
+      });
+      return;
+    }catch(e){console.warn('Kakao.Share 실패:',e);}
   }
-  // PC: URL 클립보드 복사 + 토스트 안내
+  // 폴백: PC에서 SDK 미작동 시 URL 복사
   _doClipboard(url, null);
   _shareToast();
 }
