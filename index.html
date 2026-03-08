@@ -555,7 +555,25 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="fg"><label class="fl">구/군</label><select class="fi" id="larea" onchange="updateDongList('l')"></select></div>
       <div class="fg"><label class="fl">동/읍/면</label><select class="fi" id="ldong-sel"></select></div>
     </div>
-    <div class="fg"><label class="fl">상세주소 (직접 입력)</label><input class="fi" id="ldong" placeholder="예: 서교동 397-5 (번지 입력 가능)"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border2);font-size:13px;font-weight:600;flex:1;justify-content:center" id="l-btype-general-lbl">
+        <input type="radio" name="l-btype" value="general" checked onchange="toggleBldgType('l')" style="accent-color:var(--accent)"> 🏠 일반건축물
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border2);font-size:13px;font-weight:600;flex:1;justify-content:center" id="l-btype-apt-lbl">
+        <input type="radio" name="l-btype" value="apt" onchange="toggleBldgType('l')" style="accent-color:var(--accent)"> 🏢 집합건물
+      </label>
+    </div>
+    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="ldong" placeholder="예: 397-5  (건축물대장 조회용, 손님에게 미노출)"></div>
+    <div class="fr hidden" id="l-apt-row">
+      <div class="fg"><label class="fl">동</label><input class="fi" id="lbldgdong" placeholder="예: 101동 (없으면 공란)"></div>
+      <div class="fg"><label class="fl">호수</label><input class="fi" id="lhosu" placeholder="예: 305호 (없으면 공란)"></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <button type="button" class="btn" style="width:100%;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="fetchBldgInfo('l')">
+        🏛️ 건축물대장 자동조회 <span style="font-size:11px;opacity:.8">(시/도·구/군·동 선택 후 클릭)</span>
+      </button>
+      <div id="bldg-result-l" style="display:none;margin-top:8px;padding:10px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;font-size:12px;color:var(--text2)"></div>
+    </div>
 
     <div class="fsec">💰 금액 정보</div>
     <div class="fr" id="l-sale-row">
@@ -686,7 +704,25 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="fg"><label class="fl">구/군</label><select class="fi" id="elarea" onchange="updateDongList('el')"></select></div>
       <div class="fg"><label class="fl">동/읍/면</label><select class="fi" id="eldong-sel"></select></div>
     </div>
-    <div class="fg"><label class="fl">상세주소</label><input class="fi" id="eldong" placeholder="예: 서교동 397-5"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border2);font-size:13px;font-weight:600;flex:1;justify-content:center" id="el-btype-general-lbl">
+        <input type="radio" name="el-btype" value="general" checked onchange="toggleBldgType('el')" style="accent-color:var(--accent)"> 🏠 일반건축물
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 14px;border-radius:8px;border:1.5px solid var(--border2);font-size:13px;font-weight:600;flex:1;justify-content:center" id="el-btype-apt-lbl">
+        <input type="radio" name="el-btype" value="apt" onchange="toggleBldgType('el')" style="accent-color:var(--accent)"> 🏢 집합건물
+      </label>
+    </div>
+    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="eldong" placeholder="예: 397-5  (건축물대장 조회용, 손님에게 미노출)"></div>
+    <div class="fr hidden" id="el-apt-row">
+      <div class="fg"><label class="fl">동</label><input class="fi" id="elbldgdong" placeholder="예: 101동 (없으면 공란)"></div>
+      <div class="fg"><label class="fl">호수</label><input class="fi" id="elhosu" placeholder="예: 305호 (없으면 공란)"></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <button type="button" class="btn" style="width:100%;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="fetchBldgInfo('el')">
+        🏛️ 건축물대장 자동조회 <span style="font-size:11px;opacity:.8">(시/도·구/군·동 선택 후 클릭)</span>
+      </button>
+      <div id="bldg-result-el" style="display:none;margin-top:8px;padding:10px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;font-size:12px;color:var(--text2)"></div>
+    </div>
     <div class="fsec">💰 금액 정보</div>
     <div class="fr" id="el-sale-row">
       <div class="fg"><label class="fl">매매가 (만원)</label><input class="fi" id="elprice" type="number"></div>
@@ -2153,6 +2189,9 @@ function toggleRent(prefix){
 function openListing(){
   if(!currentUser){show('ov-login');return;}
   if(currentUser.status==='pending'){alert('관리자 승인 대기 중입니다.\n승인 완료 후 매물 등록이 가능합니다.');return;}
+  // 건물타입 초기화
+  const lBtype=document.querySelector('input[name="l-btype"][value="general"]');
+  if(lBtype){lBtype.checked=true;toggleBldgType('l');}
   show('ov-listing');
 }
 function doAddListing(){
@@ -2170,6 +2209,8 @@ function doAddListing(){
     type:document.getElementById('ltype').value,
     gsType:document.getElementById('ltype').value==='고시원'?(document.getElementById('lgstype').value||''):'',
     deal,name,prov,area,dong,
+    bldgdong:document.getElementById('lbldgdong').value.trim()||'',
+    hosu:document.getElementById('lhosu').value.trim()||'',
     price:isRent?0:parseFloat(document.getElementById('lprice').value)||0,
     deposit:isRent?parseFloat(document.getElementById('ldeposit').value)||0:null,
     monthly:isRent?parseFloat(document.getElementById('lmonthly').value)||0:null,
@@ -2491,6 +2532,138 @@ function refreshRegisteredAt(ownerId,lid,btnEl){
 }
 
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// 건축물대장 자동조회
+// ════════════════════════════════════════════
+function toggleBldgType(p){
+  const isApt=document.querySelector(`input[name="${p}-btype"]:checked`)?.value==='apt';
+  const aptRow=document.getElementById(p+'-apt-row');
+  if(aptRow){aptRow.classList.toggle('hidden',!isApt);}
+  // 선택된 버튼 강조
+  const gLbl=document.getElementById(p+'-btype-general-lbl');
+  const aLbl=document.getElementById(p+'-btype-apt-lbl');
+  if(gLbl)gLbl.style.borderColor=isApt?'var(--border2)':'var(--accent)';
+  if(aLbl)aLbl.style.borderColor=isApt?'var(--accent)':'var(--border2)';
+}
+
+async function fetchBldgInfo(prefix='el'){
+  const apiKey='60b9aa20b5a6ba28ef15c313109fd19d4303f1e175c24af104b70690a2eac0bd';
+  const p=prefix;
+  const prov=document.getElementById(p+'prov')?.value||'';
+  const area=document.getElementById(p+'area')?.value||'';
+  const dongSel=document.getElementById(p+'dong-sel')?.value||'';
+  const dongInput=document.getElementById(p+'dong')?.value||'';
+  const bldgdong=document.getElementById(p+'bldgdong')?.value.trim()||'';
+  const hosu=document.getElementById(p+'hosu')?.value.trim()||'';
+
+  if(!prov||!area){alert('시/도와 구/군을 먼저 선택해주세요.');return;}
+
+  const resultEl=document.getElementById('bldg-result-'+p);
+  resultEl.style.display='block';
+  resultEl.style.background='rgba(59,130,246,.1)';
+  resultEl.style.borderColor='rgba(59,130,246,.3)';
+  resultEl.innerHTML='⏳ 조회 중...';
+
+  const addr=[prov,area,dongSel,dongInput].filter(Boolean).join(' ');
+
+  try{
+    // 1단계: 카카오 주소→법정동코드 변환
+    const kakaoRes=await new Promise((resolve,reject)=>{
+      const geocoder=new kakao.maps.services.Geocoder();
+      geocoder.addressSearch(addr,(result,status)=>{
+        if(status===kakao.maps.services.Status.OK)resolve(result[0]);
+        else reject(new Error('주소를 찾을 수 없습니다: '+addr));
+      });
+    });
+
+    const bcode=kakaoRes.address?.b_code||'';
+    if(!bcode||bcode.length<10){throw new Error('법정동코드를 가져올 수 없습니다.');}
+    const sigunguCd=bcode.substring(0,5);
+    const bjdongCd=bcode.substring(5,10);
+    const bun=(kakaoRes.address?.main_address_no||'0').padStart(4,'0');
+    const ji=(kakaoRes.address?.sub_address_no||'0').padStart(4,'0');
+
+    const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null&&val!=='')el.value=val;};
+
+    // 2단계: 일반건축물 API 먼저 시도
+    const baseUrl=`https://apis.data.go.kr/1613000/BldRgstHubService`;
+    const commonParam=`?serviceKey=${encodeURIComponent(apiKey)}&sigunguCd=${sigunguCd}&bjdongCd=${bjdongCd}&bun=${bun}&ji=${ji}&numOfRows=5&pageNo=1&_type=json`;
+
+    let d=null;
+    let isApt=false;
+
+    const res1=await fetch(baseUrl+'/getBrTitleInfo'+commonParam);
+    const json1=await res1.json();
+    const item1=json1?.response?.body?.items?.item;
+    d=Array.isArray(item1)?item1[0]:item1;
+
+    // 3단계: 일반건축물 결과 없으면 집합건물 API 시도
+    if(!d){
+      isApt=true;
+      const res2=await fetch(baseUrl+'/getBrRecapTitleInfo'+commonParam);
+      const json2=await res2.json();
+      const item2=json2?.response?.body?.items?.item;
+      d=Array.isArray(item2)?item2[0]:item2;
+
+      // 집합건물 호별 정보도 조회 (동호수 있으면)
+      if(d&&(bldgdong||hosu)){
+        const floorParam=`&dongNm=${encodeURIComponent(bldgdong.replace(/동$/,''))}&hoNm=${encodeURIComponent(hosu.replace(/호$/,''))}`;
+        const res3=await fetch(baseUrl+'/getBrExposPubuseAreaInfo'+commonParam+floorParam);
+        const json3=await res3.json();
+        const item3=json3?.response?.body?.items?.item;
+        const d3=Array.isArray(item3)?item3[0]:item3;
+        if(d3){
+          // 호별 전용면적으로 덮어쓰기
+          if(d3.area)d.totArea=d3.area;
+          if(d3.flrNo)d.grndFlrCnt_ho=d3.flrNo; // 해당 층수
+        }
+      }
+    }
+
+    if(!d){throw new Error('건축물대장 정보를 찾을 수 없습니다.\n상세주소(지번)까지 입력해보세요.');}
+
+    // 4단계: 폼 자동입력
+    if(d.grndFlrCnt)set(p+'totalfloor',parseInt(d.grndFlrCnt)||'');
+    // 집합건물 호별 층수
+    if(d.grndFlrCnt_ho)set(p+'floor',parseInt(d.grndFlrCnt_ho)||'');
+
+    if(d.indrMechUtcnt||d.indrAutoUtcnt||d.oudrMechUtcnt||d.oudrAutoUtcnt){
+      const parking=(parseInt(d.indrMechUtcnt)||0)+(parseInt(d.indrAutoUtcnt)||0)
+                   +(parseInt(d.oudrMechUtcnt)||0)+(parseInt(d.oudrAutoUtcnt)||0);
+      if(parking>0)set(p+'parking',parking);
+    }
+    if(d.useAprDay&&d.useAprDay.length>=8){
+      set(p+'year',d.useAprDay.substring(0,4));
+      set(p+'approvedate',`${d.useAprDay.substring(0,4)}-${d.useAprDay.substring(4,6)}-${d.useAprDay.substring(6,8)}`);
+    }
+    if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
+    if(d.vlawBldYn==='Y'){const el=document.getElementById(p+'illegal');if(el)el.value='위반건축물';}
+
+    const parking2=(parseInt(d.indrMechUtcnt||0)+parseInt(d.indrAutoUtcnt||0)
+                   +parseInt(d.oudrMechUtcnt||0)+parseInt(d.oudrAutoUtcnt||0));
+    const rows=[
+      ['구분', isApt?'🏢 집합건물':'🏠 일반건축물'],
+      ['건물명',d.bldNm||'-'],
+      ['주용도',d.mainPurpsCdNm||'-'],
+      ['연면적',d.totArea?Math.round(d.totArea)+'㎡':'-'],
+      ['총층수',d.grndFlrCnt?d.grndFlrCnt+'층':'-'],
+      ['사용승인일',d.useAprDay&&d.useAprDay.length>=8
+        ?`${d.useAprDay.substring(0,4)}-${d.useAprDay.substring(4,6)}-${d.useAprDay.substring(6,8)}`:'-'],
+      ['주차',parking2>0?parking2+'대':'-'],
+      ['위반건축물',d.vlawBldYn==='Y'?'⚠️ 위반건축물':'해당없음'],
+    ].map(([k,v])=>`<span style="color:var(--text2)">${k}:</span> <b style="color:var(--text)">${v}</b>`).join(' &nbsp;|&nbsp; ');
+
+    resultEl.innerHTML='✅ 자동입력 완료 &nbsp;'+rows;
+    resultEl.style.background='rgba(62,207,142,.1)';
+    resultEl.style.borderColor='rgba(62,207,142,.3)';
+
+  }catch(e){
+    resultEl.innerHTML='❌ '+e.message;
+    resultEl.style.background='rgba(255,107,107,.1)';
+    resultEl.style.borderColor='rgba(255,107,107,.3)';
+  }
+}
+
 // 매물 수정
 // ════════════════════════════════════════════
 function closeEditListing(){
@@ -2543,6 +2716,13 @@ function openEditListing(){
   set('elmovein',item.movein||'');
   set('elillegal',item.illegal||'해당없음');
   set('eldesc',item.desc||'');
+  set('elbldgdong',item.bldgdong||'');
+  set('elhosu',item.hosu||'');
+  // 집합건물 여부 복원
+  const isAptItem=!!(item.bldgdong||item.hosu);
+  const btypeEl=document.querySelector(`input[name="el-btype"][value="${isAptItem?'apt':'general'}"]`);
+  if(btypeEl){btypeEl.checked=true;}
+  setTimeout(()=>toggleBldgType('el'),0);
   const elGsType=document.getElementById('elgstype');
   if(elGsType)elGsType.value=item.gsType||'';
   toggleRent('el');
@@ -2588,6 +2768,8 @@ function doEditListing(){
     prov:document.getElementById('elprov').value,
     area:document.getElementById('elarea').value,
     dong:dongManual||dongSel||'',
+    bldgdong:document.getElementById('elbldgdong').value.trim()||'',
+    hosu:document.getElementById('elhosu').value.trim()||'',
     price:isRent?0:parseFloat(document.getElementById('elprice').value)||0,
     deposit:isRent?parseFloat(document.getElementById('eldeposit').value)||0:null,
     monthly:isRent?parseFloat(document.getElementById('elmonthly').value)||0:null,
