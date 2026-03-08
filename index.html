@@ -2606,6 +2606,14 @@ function shareKakao(){
 
   if(window.Kakao && Kakao.isInitialized() && Kakao.Share){
     try{
+      Kakao.Share.sendScrap({
+        requestUrl: url,
+        templateId: undefined,
+        templateArgs: undefined,
+      });
+      return;
+    }catch(e){console.warn('Kakao.Share.sendScrap 실패:',e);}
+    try{
       Kakao.Share.sendDefault({
         objectType:'feed',
         content:{
