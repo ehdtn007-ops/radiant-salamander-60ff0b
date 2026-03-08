@@ -2884,8 +2884,8 @@ async function loadFromFirebase(){
   kakao.maps.load(function(){
     try{geocoderObj=new kakao.maps.services.Geocoder();initMap();}
     catch(e){console.warn('카카오맵 초기화 실패:',e);}
+    setTimeout(()=>checkUrlLid(), 800); // 지도 초기화 완료 후 URL 파라미터 처리
   });
-  checkUrlLid(); // URL에 ?lid= 파라미터 있으면 해당 매물 자동 오픈
 }
 
 loadFromFirebase();
