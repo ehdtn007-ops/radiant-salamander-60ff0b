@@ -282,12 +282,13 @@ select:hover,select:focus{border-color:var(--accent)}
 /* 상세 정보 테이블 */
 .dpop-info-block{padding:14px 18px;border-bottom:1px solid var(--border)}
 .dpop-info-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
-.info-table{width:100%;border-collapse:collapse}
-.info-table td{padding:6px 0;font-size:12px;vertical-align:top}
-.info-table td:first-child{color:var(--text2);width:90px;flex-shrink:0}
-.info-table td:last-child{font-weight:600;color:var(--text);text-align:right}
-.info-table tr{border-bottom:1px solid var(--border)}
-.info-table tr:last-child{border-bottom:none}
+.info-table{display:none}/* 미사용 */
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.info-cell{background:var(--surface2);border-radius:7px;padding:5px 7px}
+.info-cell.wide{grid-column:span 3}
+.info-cell.wide2{grid-column:span 2}
+.info-lbl{font-size:9px;color:var(--text2);font-weight:600;letter-spacing:.3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info-val{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 담당자 */
 .dpop-agent-block{padding:14px 18px}
@@ -1471,27 +1472,26 @@ function showBoardDetail(item){
         </div>
         <!-- 가격 -->
         <div class="dpop-price-block">${priceHtml}</div>
-        ${item.desc&&item.desc.trim()?`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text">${item.desc}</div></div>`:''}
+        ${item.desc&&item.desc.trim()
+          ?`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text">${item.desc}</div></div>`
+          :`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text" style="color:var(--text3)">등록된 특징 설명이 없습니다.</div></div>`}
         <!-- 상세 정보 -->
         <div class="dpop-info-block">
           <div class="dpop-info-title">📋 중개대상물 표시 정보</div>
-          <table class="info-table">
-            <tr><td>중개대상물 종류</td><td>${item.type}</td></tr>
-            <tr><td>중개거래형태</td><td>${item.deal}</td></tr>
-            <tr><td>소재지</td><td>${maskAddr(item)}</td></tr>
-            <tr><td>면적</td><td>${item.area2?item.area2+'㎡':'-'}</td></tr>
-            <tr><td>해당 층수</td><td>${item.floor?item.floor+'층':'-'}</td></tr>
-            <tr><td>총 층수</td><td>${item.totalfloor?item.totalfloor+'층':'-'}</td></tr>
-            <tr><td>방 갯수</td><td>${item.rooms?item.rooms+'실':'-'}</td></tr>
-            <tr><td>욕실 갯수</td><td>${item.baths?item.baths+'개':'-'}</td></tr>
-            <tr><td>방향</td><td>${item.direction||'-'}</td></tr>
-            <tr><td>주차대수</td><td>${item.parking!=null?item.parking+'대':'-'}</td></tr>
-            <tr><td>관리비</td><td>${item.maintenance?won(item.maintenance)+'/월':'-'}</td></tr>
-            <tr><td>입주가능일</td><td>${item.movein||'협의'}</td></tr>
-            <tr><td>사용승인일</td><td>${item.approvedate||'-'}</td></tr>
-            <tr><td>준공연도</td><td>${item.year?item.year+'년':'-'}</td></tr>
-            <tr><td>위반건축물</td><td style="${item.illegal==='위반건축물'?'color:var(--red);font-weight:700':''}">${item.illegal||'해당없음'}</td></tr>
-          </table>
+          <div class="info-grid">
+            <div class="info-cell"><div class="info-lbl">종류</div><div class="info-val">${item.type}</div></div>
+            <div class="info-cell"><div class="info-lbl">거래형태</div><div class="info-val">${item.deal}</div></div>
+            <div class="info-cell"><div class="info-lbl">방향</div><div class="info-val">${item.direction||'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">욕실</div><div class="info-val">${item.baths?item.baths+'개':'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">총 층수</div><div class="info-val">${item.totalfloor?item.totalfloor+'층':'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">주차</div><div class="info-val">${item.parking!=null?item.parking+'대':'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">관리비</div><div class="info-val">${item.maintenance?won(item.maintenance)+'/월':'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">준공연도</div><div class="info-val">${item.year?item.year+'년':'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">사용승인일</div><div class="info-val">${item.approvedate||'-'}</div></div>
+            <div class="info-cell"><div class="info-lbl">입주가능일</div><div class="info-val">${item.movein||'협의'}</div></div>
+            <div class="info-cell wide2"><div class="info-lbl">위반건축물</div><div class="info-val" style="${item.illegal==='위반건축물'?'color:var(--red)':''}">${item.illegal||'해당없음'}</div></div>
+            <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${maskAddr(item)}</div></div>
+          </div>
         </div>
         <!-- 담당자 -->
         <div class="dpop-agent-block">${agentCardHtml}</div>
@@ -1893,33 +1893,32 @@ function showPopup(item){
   // ── 특징 설명 ──
   const descBlock=document.getElementById('dp-desc-block');
   const descEl=document.getElementById('dp-desc');
+  descBlock.style.display='block';
   if(item.desc&&item.desc.trim()){
     descEl.textContent=item.desc;
-    descBlock.style.display='block';
+    descEl.style.color='';
   } else {
-    descBlock.style.display='none';
+    descEl.textContent='등록된 특징 설명이 없습니다.';
+    descEl.style.color='var(--text3)';
   }
 
   // ── 상세 정보 ──
   document.getElementById('dp-info-block').innerHTML=`
     <div class="dpop-info-title">📋 중개대상물 표시 정보</div>
-    <table class="info-table">
-      <tr><td>중개대상물 종류</td><td>${item.type}</td></tr>
-      <tr><td>중개거래형태</td><td>${item.deal}</td></tr>
-      <tr><td>소재지</td><td>${maskAddr(item)}</td></tr>
-      <tr><td>면적</td><td>${item.area2?item.area2+'㎡':'-'}</td></tr>
-      <tr><td>해당 층수</td><td>${item.floor?item.floor+'층':'-'}</td></tr>
-      <tr><td>총 층수</td><td>${item.totalfloor?item.totalfloor+'층':'-'}</td></tr>
-      <tr><td>방 갯수</td><td>${item.rooms?item.rooms+'실':'-'}</td></tr>
-      <tr><td>욕실 갯수</td><td>${item.baths?item.baths+'개':'-'}</td></tr>
-      <tr><td>방향</td><td>${item.direction||'-'}</td></tr>
-      <tr><td>주차대수</td><td>${item.parking!=null&&item.parking!==undefined?item.parking+'대':'-'}</td></tr>
-      <tr><td>관리비</td><td>${item.maintenance?won(item.maintenance)+'/월':'-'}</td></tr>
-      <tr><td>입주가능일</td><td>${item.movein||'협의'}</td></tr>
-      <tr><td>사용승인일</td><td>${item.approvedate||'-'}</td></tr>
-      <tr><td>준공연도</td><td>${item.year?item.year+'년':'-'}</td></tr>
-      <tr><td>위반건축물</td><td style="${(item.illegal==='위반건축물')?'color:var(--red);font-weight:700':''}">${item.illegal||'해당없음'}</td></tr>
-    </table>`;
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-lbl">종류</div><div class="info-val">${item.type}</div></div>
+      <div class="info-cell"><div class="info-lbl">거래형태</div><div class="info-val">${item.deal}</div></div>
+      <div class="info-cell"><div class="info-lbl">방향</div><div class="info-val">${item.direction||'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">욕실</div><div class="info-val">${item.baths?item.baths+'개':'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">총 층수</div><div class="info-val">${item.totalfloor?item.totalfloor+'층':'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">주차</div><div class="info-val">${item.parking!=null&&item.parking!==undefined?item.parking+'대':'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">관리비</div><div class="info-val">${item.maintenance?won(item.maintenance)+'/월':'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">준공연도</div><div class="info-val">${item.year?item.year+'년':'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">사용승인일</div><div class="info-val">${item.approvedate||'-'}</div></div>
+      <div class="info-cell"><div class="info-lbl">입주가능일</div><div class="info-val">${item.movein||'협의'}</div></div>
+      <div class="info-cell wide2"><div class="info-lbl">위반건축물</div><div class="info-val" style="${(item.illegal==='위반건축물')?'color:var(--red)':''}">${item.illegal||'해당없음'}</div></div>
+      <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${maskAddr(item)}</div></div>
+    </div>`;
 
   // ── 담당자 칸 (전화 아이콘 + 전체 클릭 링크) ──
   const ag=document.getElementById('dp-agent');
