@@ -79,20 +79,17 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;height:54px;backg
 
 /* ═══ 뷰 전환 배너 ═══ */
 .view-switcher{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
   display:flex;align-items:center;justify-content:center;
-  background:#252a3a;
-  flex-shrink:0;
-  padding:10px 16px;
-  z-index:101;
-  border-top:1px solid rgba(255,255,255,0.1);
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  z-index:101;pointer-events:all;
 }
 .view-toggle{
   display:flex;align-items:center;
-  background:#1a1d27;
+  background:rgba(15,17,23,0.85);
   border:1.5px solid rgba(255,255,255,0.2);
   border-radius:30px;padding:4px;gap:2px;
   box-shadow:0 4px 20px rgba(0,0,0,.6);
+  backdrop-filter:blur(10px);
 }
 .view-tab{
   display:flex;align-items:center;gap:6px;
@@ -208,7 +205,7 @@ div.custom_overlay > div, .overlaybox{background:transparent!important;border:no
 .abc-pin:hover .abc-bub{filter:brightness(1.1);transform:scale(1.05)}
 
 /* 사무소 정보 카드 */
-.agency-card{position:absolute;top:14px;left:14px;background:rgba(15,17,23,.93);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;z-index:30;backdrop-filter:blur(10px);min-width:210px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.agency-card{display:none}
 .agency-name{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:-.3px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border)}
 .agency-rows{display:flex;flex-direction:column;gap:4px}
 .agency-row{display:flex;gap:6px;font-size:11px;align-items:flex-start}
@@ -818,23 +815,22 @@ div.custom_overlay > div, .overlaybox{background:transparent!important;border:no
   <div class="huser" id="huser"></div>
 </header>
 
-<!-- ═══ 뷰 전환 배너 ═══ -->
-<div class="view-switcher">
-  <div class="view-toggle">
-    <div class="view-tab active" id="vtab-map" onclick="switchView('map')">
-      <span class="view-tab-icon">🗺️</span> 지도로 보기
-    </div>
-    <div class="view-tab" id="vtab-board" onclick="switchView('board')">
-      <span class="view-tab-icon">📋</span> 게시판 보기
-    </div>
-  </div>
-</div>
-
 <!-- ═══ 메인 ═══ -->
 <div class="main">
   
   <div id="map-wrap">
     <div id="kakao-map"></div>
+    <!-- 뷰 전환 버튼 - 지도 위 오버레이 -->
+    <div class="view-switcher">
+      <div class="view-toggle">
+        <div class="view-tab active" id="vtab-map" onclick="switchView('map')">
+          <span class="view-tab-icon">🗺️</span> 지도로 보기
+        </div>
+        <div class="view-tab" id="vtab-board" onclick="switchView('board')">
+          <span class="view-tab-icon">📋</span> 게시판 보기
+        </div>
+      </div>
+    </div>
     <!-- 사무소 정보 카드 -->
     <div class="agency-card">
       <div class="agency-name">첫번째공인중개사사무소</div>
@@ -1618,8 +1614,8 @@ function renderPins(coordMap){
       const item=items[0];
       const pc=pinClass(item),lbl=pinLbl(item);
       const tag=pinTypeTag(item);
-      const tagHtml=`<span style="position:absolute;top:2px;left:2px;font-size:9px;font-weight:900;color:#fff;background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5;box-shadow:0 2px 5px rgba(0,0,0,.5);letter-spacing:.4px;z-index:10">${tag}</span>`;
-      const content=`<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;background:transparent"><div class="cpin-bub ${pc}" style="position:relative">${tagHtml}${lbl}</div></div>`;
+      const tagHtml=`<span style="position:absolute;top:-20px;left:0;font-size:9px;font-weight:900;color:#fff;background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5;box-shadow:0 2px 5px rgba(0,0,0,.5);letter-spacing:.4px;z-index:10">${tag}</span>`;
+      const content=`<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:visible;background:transparent"><div class="cpin-bub ${pc}" style="position:relative;overflow:visible">${tagHtml}${lbl}</div></div>`;
       const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:activeId===item.lid?20:10});
       ov.setMap(kakaoMap);overlays.push(ov);
       setTimeout(()=>{
