@@ -168,15 +168,12 @@ select:hover,select:focus{border-color:var(--accent)}
 
 /* ═══ 핀 스타일 ═══ */
 .cpin{position:relative;cursor:pointer;transform:translateY(-100%)}
-.cpin-bub{font-size:18px;font-weight:800;padding:8px 15px;border-radius:22px;white-space:nowrap;position:relative;transition:filter .15s,font-size .15s;box-shadow:0 4px 18px rgba(0,0,0,.45);text-align:center;line-height:1.6}
+.cpin-bub{font-size:18px;font-weight:800;padding:8px 15px;border-radius:22px;white-space:nowrap;position:relative;overflow:visible;transition:filter .15s,font-size .15s;box-shadow:0 4px 18px rgba(0,0,0,.45);text-align:center;line-height:1.6}
 .cpin-bub .pin-tot{color:#ff4444;font-size:18px;font-weight:900;text-shadow:0 1px 3px rgba(0,0,0,.5);display:block}
 /* 클러스터 핀 */
-/* 핀 래퍼 */
-.cpin-wrap{display:inline-flex;flex-direction:column;align-items:flex-start}
-/* 거래유형 태그 (고월/모월/고매/모매) — 핀 위에 블록으로 */
-.cpin-deal-tag{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.6px;color:#fff;background:linear-gradient(135deg,#ff4500,#ff7043);border-radius:5px;padding:2px 7px;white-space:nowrap;margin-bottom:3px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-/* 고시원 유형 배지 (올원룸/혼합/올미니) */
-.cpin-type-badge{display:inline-block;font-size:9px;font-weight:800;color:#f0f2ff;background:rgba(15,17,23,.88);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 5px;white-space:nowrap;margin-bottom:3px;letter-spacing:.2px;line-height:1.5}
+/* 카카오맵 커스텀오버레이 래퍼 배경 투명 처리 */
+div.custom_overlay > div, .overlaybox{background:transparent!important;border:none!important}
+/* 핀 관련 불필요 CSS 정리 */
 .pin-price-line{font-size:12px;font-weight:700;display:block;line-height:1.45}
 .pin-tot-line{font-size:11px;font-weight:900;color:#ff4444;text-shadow:0 1px 3px rgba(0,0,0,.5);display:block;line-height:1.3}
 .cpin-cluster{cursor:pointer;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
@@ -1620,31 +1617,10 @@ function renderPins(coordMap){
       // 단일 핀
       const item=items[0];
       const pc=pinClass(item),lbl=pinLbl(item);
-      // 핀 DOM 직접 생성
-      const wrap=document.createElement('div');
-      wrap.style.cssText='display:inline-flex;flex-direction:column;align-items:flex-start;cursor:pointer';
-
-      const dealTagEl=document.createElement('div');
-      dealTagEl.textContent=pinTypeTag(item);
-      dealTagEl.style.cssText='font-size:9px;font-weight:900;letter-spacing:.5px;color:#fff;background:linear-gradient(135deg,#d03000,#ff5722);border-radius:4px;padding:1px 6px;white-space:nowrap;margin-bottom:3px;line-height:1.6;box-shadow:0 1px 4px rgba(0,0,0,.5)';
-      wrap.appendChild(dealTagEl);
-
-      const pinEl=document.createElement('div');
-      pinEl.className='cpin'+(activeId===item.lid?' active':'');
-      pinEl.id='pin-'+item.lid;
-      pinEl.style.cssText='-webkit-tap-highlight-color:transparent;touch-action:manipulation';
-      pinEl.innerHTML=`<div class="cpin-bub ${pc}">${lbl}</div>`;
-      wrap.appendChild(pinEl);
-
-      if(item.type==='고시원'&&item.gsType){
-        const badgeEl=document.createElement('div');
-        badgeEl.textContent=item.gsType;
-        badgeEl.style.cssText='font-size:9px;font-weight:800;color:#f0f2ff;background:rgba(15,17,23,.88);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:1px 5px;white-space:nowrap;margin-top:2px;line-height:1.5';
-        wrap.appendChild(badgeEl);
-      }
-
-      // yAnchor 1.0 = wrap 하단이 좌표. 태그가 위에 있으므로 핀 화살표(wrap하단)가 좌표에 맞음
-      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:wrap,yAnchor:1.0,zIndex:activeId===item.lid?20:10});
+      const tag=pinTypeTag(item);
+      const tagHtml=`<span style="position:absolute;top:2px;left:2px;font-size:9px;font-weight:900;color:#fff;background:linear-gradient(135deg,#c0392b,#e74c3c);border-radius:4px;padding:2px 7px;white-space:nowrap;line-height:1.5;box-shadow:0 2px 5px rgba(0,0,0,.5);letter-spacing:.4px;z-index:10">${tag}</span>`;
+      const content=`<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;background:transparent"><div class="cpin-bub ${pc}" style="position:relative">${tagHtml}${lbl}</div></div>`;
+      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:activeId===item.lid?20:10});
       ov.setMap(kakaoMap);overlays.push(ov);
       setTimeout(()=>{
         const el=document.getElementById('pin-'+item.lid);
