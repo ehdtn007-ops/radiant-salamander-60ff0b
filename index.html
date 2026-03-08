@@ -2260,19 +2260,19 @@ function renderAListings(){
           담당자
           <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
             <option value="전체">전체</option>
-            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>` + "${n}</option>`).join('')}
+            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>` + `${n}</option>`).join('')}
           </select>
         </th>
         <th style="width:80px">
           종류
           <select id="alf-type" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>` + "${v}</option>`).join('')}
+            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>` + `${v}</option>`).join('')}
           </select>
         </th>
         <th style="width:70px">
           거래
           <select id="alf-deal" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>` + "${v}</option>`).join('')}
+            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>` + `${v}</option>`).join('')}
           </select>
         </th>
         <th>매물명</th>
@@ -2343,7 +2343,7 @@ function bulkDelete(){
     }
   });
   renderAListings();render();
-
+}
 function toggleListingHidden(ownerId,lid){
   if(ownerId){
     const u=users.find(u=>u.id===ownerId);
