@@ -1799,6 +1799,7 @@ function showClusterPopup(items,lat,lng){
       const body=box.querySelector('.cl-popup-body');
       if(body){
         body.addEventListener('wheel',(e)=>{e.stopPropagation();},{passive:false});
+        body.addEventListener('touchmove',(e)=>{e.stopPropagation();},{passive:true});
       }
       // 상세보기 버튼들에 touchend 추가 (모바일 대응)
       box.querySelectorAll('.cl-btn').forEach(btn=>{
