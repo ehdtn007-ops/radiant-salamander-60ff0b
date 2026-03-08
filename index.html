@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>첫번째부동산 고시원·모텔 급매물</title>
+<title>고시원·모텔 매물지도</title>
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=101abfc1122832bf82c274c879984a27&libraries=services&autoload=false"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1214,22 +1214,12 @@ function placeABCPin(){
 }
 function showABCPopup(){
   activePopupItem=null;
-  const shareBtn=document.getElementById('dpop-share');
-  if(shareBtn) shareBtn.style.display='none';
   document.getElementById('dp-tags').innerHTML=`<span class="dtag" style="background:rgba(255,100,0,.18);color:#ff8c00">공인중개사사무소</span>`;
   document.getElementById('dp-name').textContent='첫번째공인중개사무소';
   document.getElementById('dp-addr').innerHTML='📍 서울특별시 중구 을지로9길 8 7층';
   document.getElementById('dp-price-block').innerHTML=`<div style="text-align:center;padding:8px 0"><a href="tel:02-6404-5455" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1));border:1.5px solid rgba(255,100,0,.5);border-radius:14px;padding:12px 28px;text-decoration:none;color:#ff8c00;font-size:15px;font-weight:800;transition:all .2s" onmouseover="this.style.background='linear-gradient(135deg,rgba(255,100,0,.3),rgba(255,140,0,.2))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1))'">📞 방문 상담 환영 &nbsp;|&nbsp; 02-6404-5455</a></div>`;
   document.getElementById('dp-desc-block').style.display='none';
-  document.getElementById('dp-info-block').innerHTML=`<div class="dpop-info-title">📋 사무소 정보</div>
-    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;padding:4px 0">
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">중개업체명</span><span style="color:var(--text);font-weight:600">첫번째공인중개사무소</span></div>
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">대표</span><span style="color:var(--text);font-weight:600">장혜정</span></div>
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">위치</span><span style="color:var(--text);font-weight:600">서울특별시 중구 을지로9길 8 7층</span></div>
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">등록번호</span><span style="color:var(--text);font-weight:600">11140-2025-00057</span></div>
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">TEL</span><span><a href="tel:02-6404-5455" style="color:var(--green);font-weight:700;text-decoration:none">02-6404-5455 📲</a></span></div>
-      <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">운영시간</span><span style="color:var(--text);font-weight:600">평일 09:00 ~ 18:00</span></div>
-    </div>`;
+  document.getElementById('dp-info-block').innerHTML=`<div class="dpop-info-title">📋 사무소 정보</div><table class="info-table"><tr><td>중개업체명</td><td>첫번째공인중개사무소</td></tr><tr><td>대표</td><td>장혜정</td></tr><tr><td>위치</td><td>서울특별시 중구 을지로9길 8 7층</td></tr><tr><td>등록번호</td><td>11140-2025-00057</td></tr><tr><td>TEL</td><td><a href="tel:02-6404-5455" style="color:var(--green);font-weight:700;text-decoration:none">02-6404-5455 📲</a></td></tr><tr><td>운영시간</td><td>평일 09:00 ~ 18:00</td></tr></table>`;
   document.getElementById('dp-agent').innerHTML='';
   document.getElementById('dpop-fav').style.visibility='hidden';
   document.getElementById('dpop').classList.add('show');
@@ -1832,8 +1822,6 @@ function renderFavList(){
 // ════════════════════════════════════════════
 function showPopup(item){
   activePopupItem=item;
-  const shareBtn=document.getElementById('dpop-share');
-  if(shareBtn) shareBtn.style.display='';
   const isRent=item.deal==='월세';
   const km=item.keymoney||0;
 
@@ -2224,37 +2212,30 @@ function renderAListings(){
   const selStyle=`background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit;cursor:pointer;outline:none;width:100%;margin-top:4px`;
 
   el.innerHTML=`
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
-      <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
-    </div>
-  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:8px">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
   ${!filtered.length&&all.length?'<div style="color:var(--text2);padding:24px;text-align:center">조건에 맞는 매물이 없습니다</div>':!all.length?'<div style="color:var(--text2);padding:24px;text-align:center">등록된 매물이 없습니다</div>':`
   <div style="overflow-x:auto">
   <table class="atable" style="min-width:900px">
     <thead>
       <tr style="border-bottom:none">
-        <th style="width:32px"><input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px"></th>
         <th style="width:110px">노출</th>
         <th style="width:90px">
           담당자
           <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
             <option value="전체">전체</option>
-            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>` + "${n}</option>`).join('')}
+            ${ownerNames.map(n=>`<option${n===fOwner?' selected':''}>${n}</option>`).join('')}
           </select>
         </th>
         <th style="width:80px">
           종류
           <select id="alf-type" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>` + "${v}</option>`).join('')}
+            ${['전체','고시원','모텔'].map(v=>`<option${v===fType?' selected':''}>${v}</option>`).join('')}
           </select>
         </th>
         <th style="width:70px">
           거래
           <select id="alf-deal" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>` + "${v}</option>`).join('')}
+            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>${v}</option>`).join('')}
           </select>
         </th>
         <th>매물명</th>
@@ -2268,7 +2249,6 @@ function renderAListings(){
       const isHidden=!!item.hidden;
       const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
       return `<tr style="${isHidden?'opacity:.5':''}">
-        <td><input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px"></td>
         <td>
           <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
             style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
@@ -2293,39 +2273,8 @@ function renderAListings(){
       </tr>`;
     }).join('')}</tbody>
   </table>
-  </div>`}\`;
+  </div>`}`;
 }
-function bulkRefreshToday(){
-  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
-  if(!items.length){alert('선택된 매물이 없습니다.');return;}
-  if(!confirm(`선택한 ${items.length}건의 등록일을 오늘로 갱신할까요?`))return;
-  const now=Date.now();
-  items.forEach(({lid,ownerId})=>{
-    if(ownerId){
-      const u=users.find(u=>u.id===ownerId);
-      if(u&&u.listings){const l=u.listings.find(l=>l.lid===lid);if(l){l.registeredAt=now;db.collection('users').doc(u.id).set(u).catch(e=>{});}}
-    } else {
-      const b=BASE.find(b=>b.lid===lid);
-      if(b){b.registeredAt=now;db.collection('base_listings').doc(lid).update({registeredAt:now}).catch(e=>{});}
-    }
-  });
-  renderAListings();
-}
-function bulkDelete(){
-  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
-  if(!items.length){alert('선택된 매물이 없습니다.');return;}
-  if(!confirm(`선택한 ${items.length}건을 삭제할까요? 되돌릴 수 없습니다.`))return;
-  items.forEach(({lid,ownerId})=>{
-    if(ownerId){
-      const u=users.find(u=>u.id===ownerId);
-      if(u&&u.listings){u.listings=u.listings.filter(l=>l.lid!==lid);db.collection('users').doc(u.id).set(u).catch(e=>{});}
-    } else {
-      const idx=BASE.findIndex(b=>b.lid===lid);
-      if(idx>=0){BASE.splice(idx,1);db.collection('base_listings').doc(lid).delete().catch(e=>{});}
-    }
-  });
-  renderAListings();render();
-
 function toggleListingHidden(ownerId,lid){
   if(ownerId){
     const u=users.find(u=>u.id===ownerId);
