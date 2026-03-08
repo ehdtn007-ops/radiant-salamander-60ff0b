@@ -1214,6 +1214,8 @@ function placeABCPin(){
 }
 function showABCPopup(){
   activePopupItem=null;
+  const shareBtn=document.getElementById('dpop-share');
+  if(shareBtn) shareBtn.style.display='none';
   document.getElementById('dp-tags').innerHTML=`<span class="dtag" style="background:rgba(255,100,0,.18);color:#ff8c00">공인중개사사무소</span>`;
   document.getElementById('dp-name').textContent='첫번째공인중개사무소';
   document.getElementById('dp-addr').innerHTML='📍 서울특별시 중구 을지로9길 8 7층';
@@ -1830,6 +1832,8 @@ function renderFavList(){
 // ════════════════════════════════════════════
 function showPopup(item){
   activePopupItem=item;
+  const shareBtn=document.getElementById('dpop-share');
+  if(shareBtn) shareBtn.style.display='';
   const isRent=item.deal==='월세';
   const km=item.keymoney||0;
 
