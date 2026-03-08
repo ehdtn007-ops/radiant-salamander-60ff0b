@@ -2610,9 +2610,9 @@ function shareKakao(){
       Kakao.Share.sendDefault({
         objectType:'feed',
         content:{
-          title:item.name,
-          description:`${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
-          imageUrl:'https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png',
+          title:'첫번째부동산 고시원·모텔 급매물',
+          description:`${item.name} | ${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
+          imageUrl:'https://raw.githubusercontent.com/ehdtn007-ops/radiant-salamander-60ff0b/main/abc.jpg',
           link:{mobileWebUrl:url, webUrl:url}
         },
         buttons:[{title:'매물 보기', link:{mobileWebUrl:url, webUrl:url}}]
