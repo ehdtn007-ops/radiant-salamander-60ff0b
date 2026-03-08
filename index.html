@@ -1163,27 +1163,29 @@ function initMap(){
 // 레벨별 폰트 크기 (레벨이 낮을수록 확대, 글자 크게)
 // 레벨별 폰트 크기 (기준: 레벨4 = 18px, 확대할수록 커짐)
 function getPinFontSize(level){
-  // 레벨4 기준 13px, 확대(낮은레벨)일수록 커짐
-  const base=13;
+  // 레벨4 기준 17px (기존 13px * 1.3), 확대(낮은레벨)일수록 커짐
+  const base=17;
   const diff=4-level;
-  return Math.max(7, Math.min(28, Math.round(base * Math.pow(1.35, diff))));
+  return Math.max(9, Math.min(36, Math.round(base * Math.pow(1.35, diff))));
 }
 function updatePinFontSize(){
   if(!kakaoMap)return;
   const lv=kakaoMap.getLevel();
   const fs=getPinFontSize(lv);
-  const fs2=Math.max(6, Math.round(fs*0.88)); // 보조 텍스트
+  const fs2=Math.max(6, Math.round(fs*0.88));
+  // abc-bub 폰트 크기 먼저 적용
+  document.querySelectorAll('.abc-bub').forEach(el=>{ el.style.fontSize=fs+'px'; });
+  // 매물 핀은 abc-bub 실제 폰트 크기를 읽어서 동일하게
+  const abcEl=document.querySelector('.abc-bub');
+  const abcFs=abcEl?parseFloat(getComputedStyle(abcEl).fontSize)||fs:fs;
   document.querySelectorAll('.cpin-bub').forEach(el=>{
-    el.style.fontSize=fs+'px';
-    el.querySelectorAll('.pin-price-line').forEach(e=>e.style.fontSize=fs+'px');
-    el.querySelectorAll('.pin-tot-line').forEach(e=>e.style.fontSize=fs+'px');
-    el.querySelectorAll('.pin-tot').forEach(e=>e.style.fontSize=fs+'px');
-    // 룸개수 span (opacity:.85 인 것)
+    el.style.fontSize=abcFs+'px';
+    el.querySelectorAll('.pin-price-line').forEach(e=>e.style.fontSize=abcFs+'px');
+    el.querySelectorAll('.pin-tot-line').forEach(e=>e.style.fontSize=abcFs+'px');
+    el.querySelectorAll('.pin-tot').forEach(e=>e.style.fontSize=abcFs+'px');
     el.querySelectorAll('span[style*="opacity"]').forEach(e=>e.style.fontSize=fs2+'px');
-    // 종류 태그 (고매/고월/모매/모월)
-    el.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(fs*0.75))+'px');
-    // 유형 뱃지 (올원룸/혼합/올미니)
-    el.querySelectorAll('.pin-gstype').forEach(e=>e.style.fontSize=Math.max(6,Math.round(fs*0.65))+'px');
+    el.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(abcFs*0.75))+'px');
+    el.querySelectorAll('.pin-gstype').forEach(e=>e.style.fontSize=Math.max(6,Math.round(abcFs*0.65))+'px');
   });
 }
 function placeABCPin(){
@@ -1578,12 +1580,11 @@ function render(){
   if(clusterFilterIds){
     listItems=items.filter(i=>clusterFilterIds.includes(i.lid));
   } else if(mapBoundsFilter&&kakaoMap){
-    // 지도 범위 내 매물만 리스트에 표시 (동 중심 좌표 기준)
     const bounds=kakaoMap.getBounds();
     listItems=items.filter(item=>{
       const key=`${item.prov||'서울'}_${item.area}_${item.dong||''}`;
       const geo=_geoBase[key];
-      if(!geo)return true; // 아직 좌표 없으면 포함
+      if(!geo)return true;
       const pos=new kakao.maps.LatLng(geo[0],geo[1]);
       return bounds.contain(pos);
     });
@@ -1625,7 +1626,6 @@ function render(){
         clusterFilterIds=null;
         render();showPopup(item);
         c.scrollIntoView({behavior:'smooth',block:'nearest'});
-        // 지도 핀으로 이동
         getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{
           kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
         },item.lid);
@@ -1637,7 +1637,7 @@ function render(){
   if(!kakaoMap)return;
   overlays.forEach(o=>o.setMap(null));overlays=[];
 
-  // 같은 위치(동) 기준으로 클러스터링
+  // 좌표 수집 후 픽셀 거리 기반 클러스터링
   const coordMap={};
   let pending=items.length;
   let rendered=false;
@@ -1645,7 +1645,6 @@ function render(){
 
   items.forEach(item=>{
     getLatLng(item.prov||'서울',item.area,item.dong||'',(lat,lng)=>{
-      // 매물별 고유 좌표이므로 항상 단일 핀
       const key=item.lid;
       if(!coordMap[key])coordMap[key]={lat,lng,items:[]};
       coordMap[key].items.push(item);
@@ -1655,9 +1654,46 @@ function render(){
   });
 }
 
+// 픽셀 거리 기반 클러스터링 (줌 레벨별 threshold)
+function clusterByPixel(coordMap){
+  const lv=kakaoMap?kakaoMap.getLevel():4;
+  // 줌 레벨별 클러스터링 거리 (픽셀)
+  const threshold=lv<=3?30:lv<=4?45:lv<=5?55:lv<=6?65:80;
+
+  const proj=kakaoMap.getProjection();
+  const points=Object.values(coordMap).map(g=>({
+    ...g,
+    px:proj.pointFromCoords(new kakao.maps.LatLng(g.lat,g.lng))
+  }));
+
+  const visited=new Array(points.length).fill(false);
+  const clusters=[];
+
+  for(let i=0;i<points.length;i++){
+    if(visited[i])continue;
+    visited[i]=true;
+    const cluster={items:[...points[i].items],lat:points[i].lat,lng:points[i].lng,px:points[i].px};
+    for(let j=i+1;j<points.length;j++){
+      if(visited[j])continue;
+      const dx=cluster.px.x-points[j].px.x;
+      const dy=cluster.px.y-points[j].px.y;
+      if(Math.sqrt(dx*dx+dy*dy)<threshold){
+        visited[j]=true;
+        cluster.items.push(...points[j].items);
+        // 중심 재계산
+        cluster.lat=(cluster.lat*(cluster.items.length-points[j].items.length)+points[j].lat*points[j].items.length)/cluster.items.length;
+        cluster.lng=(cluster.lng*(cluster.items.length-points[j].items.length)+points[j].lng*points[j].items.length)/cluster.items.length;
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
+
 function renderPins(coordMap){
   overlays.forEach(o=>o.setMap(null));overlays=[];
-  Object.values(coordMap).forEach(group=>{
+  const clusters=clusterByPixel(coordMap);
+  clusters.forEach(group=>{
     const {lat,lng,items}=group;
     if(items.length===1){
       // 단일 핀
@@ -1758,6 +1794,12 @@ function showClusterPopup(items,lat,lng){
     const box=document.getElementById('cl-popup-box');
     if(box){
       kakao.maps.event.preventMap(box);
+      // 스크롤이 지도로 전파되지 않도록 wheel 이벤트 차단
+      box.addEventListener('wheel',(e)=>{e.stopPropagation();},{passive:false});
+      const body=box.querySelector('.cl-popup-body');
+      if(body){
+        body.addEventListener('wheel',(e)=>{e.stopPropagation();},{passive:false});
+      }
       // 상세보기 버튼들에 touchend 추가 (모바일 대응)
       box.querySelectorAll('.cl-btn').forEach(btn=>{
         btn.addEventListener('touchend',(e)=>{e.preventDefault();e.stopPropagation();btn.click();},{passive:false});
