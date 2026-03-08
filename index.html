@@ -616,7 +616,7 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="fg"><label class="fl">사용승인일</label><input class="fi" id="lapprovedate" type="date"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">입주가능일</label><input class="fi" id="lmovein" type="date"></div>
+      <div class="fg"><label class="fl">입주가능일</label><input class="fi" id="lmovein" type="text" placeholder="예: 협의 / 즉시 / 2025-06-01"></div>
       <div class="fg"><label class="fl">위반건축물 여부</label>
         <select class="fi" id="lillegal">
           <option value="해당없음">해당없음</option>
@@ -763,7 +763,7 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="fg"><label class="fl">사용승인일</label><input class="fi" id="elapprovedate" type="date"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">입주가능일</label><input class="fi" id="elmovein" type="date"></div>
+      <div class="fg"><label class="fl">입주가능일</label><input class="fi" id="elmovein" type="text" placeholder="예: 협의 / 즉시 / 2025-06-01"></div>
       <div class="fg"><label class="fl">위반건축물 여부</label>
         <select class="fi" id="elillegal">
           <option value="해당없음">해당없음</option>
@@ -2192,6 +2192,8 @@ function openListing(){
   // 건물타입 초기화
   const lBtype=document.querySelector('input[name="l-btype"][value="general"]');
   if(lBtype){lBtype.checked=true;toggleBldgType('l');}
+  const lMovein=document.getElementById('lmovein');
+  if(lMovein&&!lMovein.value)lMovein.value='협의';
   show('ov-listing');
 }
 function doAddListing(){
@@ -2627,10 +2629,10 @@ async function fetchBldgInfo(prefix='el'){
     // 집합건물 호별 층수
     if(d.grndFlrCnt_ho)set(p+'floor',parseInt(d.grndFlrCnt_ho)||'');
 
-    if(d.indrMechUtcnt||d.indrAutoUtcnt||d.oudrMechUtcnt||d.oudrAutoUtcnt){
+    {
       const parking=(parseInt(d.indrMechUtcnt)||0)+(parseInt(d.indrAutoUtcnt)||0)
                    +(parseInt(d.oudrMechUtcnt)||0)+(parseInt(d.oudrAutoUtcnt)||0);
-      if(parking>0)set(p+'parking',parking);
+      set(p+'parking',parking);
     }
     if(d.useAprDay&&d.useAprDay.length>=8){
       set(p+'year',d.useAprDay.substring(0,4));
