@@ -563,7 +563,7 @@ select:hover,select:focus{border-color:var(--accent)}
         <input type="radio" name="l-btype" value="apt" onchange="toggleBldgType('l')" style="accent-color:var(--accent)"> 🏢 집합건물
       </label>
     </div>
-    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="ldong" placeholder="예: 397-5  (건축물대장 조회용, 손님에게 미노출)"></div>
+    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="ldong" placeholder="예: 397-5"><div style="margin-top:5px;font-size:11px;color:#f59e0b;display:flex;align-items:center;gap:4px">🔒 번지수는 공개되지 않으며 건축물대장 조회 용도로만 사용됩니다.</div></div>
     <div class="fr hidden" id="l-apt-row">
       <div class="fg"><label class="fl">동</label><input class="fi" id="lbldgdong" placeholder="예: 101동 (없으면 공란)"></div>
       <div class="fg"><label class="fl">호수</label><input class="fi" id="lhosu" placeholder="예: 305호 (없으면 공란)"></div>
@@ -2193,7 +2193,7 @@ function openListing(){
   const lBtype=document.querySelector('input[name="l-btype"][value="general"]');
   if(lBtype){lBtype.checked=true;toggleBldgType('l');}
   const lMovein=document.getElementById('lmovein');
-  if(lMovein&&!lMovein.value)lMovein.value='협의';
+  if(lMovein)lMovein.value='협의';
   show('ov-listing');
 }
 function doAddListing(){
