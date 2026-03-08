@@ -2606,20 +2606,11 @@ function shareKakao(){
 
   if(window.Kakao && Kakao.isInitialized() && Kakao.Share){
     try{
-      Kakao.Share.sendScrap({
-        requestUrl: url,
-        templateId: undefined,
-        templateArgs: undefined,
-      });
-      return;
-    }catch(e){console.warn('Kakao.Share.sendScrap 실패:',e);}
-    try{
       Kakao.Share.sendDefault({
         objectType:'feed',
         content:{
-          title:`🏠 ${item.name}`,
-          description:`[첫번째부동산] ${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}\n\n👆 클릭해서 매물 상세 확인`,
-          imageUrl:'https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/zxc.jpg',
+          title:'첫번째부동산 고시원·모텔 급매물',
+          description:`${item.name} | ${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
           link:{mobileWebUrl:url, webUrl:url}
         },
         buttons:[{title:'매물 보기', link:{mobileWebUrl:url, webUrl:url}}]
