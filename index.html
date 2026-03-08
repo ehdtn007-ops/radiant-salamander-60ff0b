@@ -2600,11 +2600,12 @@ function copyShareUrl(){
 function shareKakao(){
   const item=activePopupItem||_shareItem;
   if(!item)return;
-  const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
+  // GitHub Pages 배포 주소 고정 (카카오 등록 도메인과 일치해야 링크 작동)
+  const baseUrl='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b';
+  const url=`${baseUrl}/index.html?lid=${item.lid}`;
   const isRent=item.deal==='월세';
   const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
 
-  // 카카오 SDK로 직접 공유 (모바일: 카카오톡 앱 열림 / PC: 카카오톡 공유 팝업)
   if(window.Kakao && Kakao.isInitialized() && Kakao.Share){
     try{
       Kakao.Share.sendDefault({
@@ -2612,7 +2613,7 @@ function shareKakao(){
         content:{
           title:'첫번째부동산 고시원·모텔 급매물',
           description:`${item.name} | ${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
-          imageUrl:'https://raw.githubusercontent.com/ehdtn007-ops/radiant-salamander-60ff0b/main/abc.jpg',
+          imageUrl:'https://raw.githubusercontent.com/ehdtn007-ops/radiant-salamander-60ff0b/main/zxc.jpg',
           link:{mobileWebUrl:url, webUrl:url}
         },
         buttons:[{title:'매물 보기', link:{mobileWebUrl:url, webUrl:url}}]
@@ -2620,7 +2621,6 @@ function shareKakao(){
       return;
     }catch(e){console.warn('Kakao.Share 실패:',e);}
   }
-  // 폴백: PC에서 SDK 미작동 시 URL 복사
   _doClipboard(url, null);
   _shareToast();
 }
