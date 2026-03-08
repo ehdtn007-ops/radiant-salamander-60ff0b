@@ -34,7 +34,7 @@ const db = firebase.firestore();
   --purple:#a855f7;--purple-d:#7c3aed;--orange:#ff8c42;
   --text:#f0f2ff;--text2:#8b90a7;--text3:#3d4460;
 }
-body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* ═══ 오버레이 / 모달 ═══ */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);z-index:600;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
@@ -742,18 +742,16 @@ select:hover,select:focus{border-color:var(--accent)}
 
 <!-- ═══ 공유 모달 ═══ -->
 <div class="overlay hidden" id="ov-share">
-  <div class="modal" style="width:380px">
+  <div class="modal" style="width:360px">
     <button class="modal-close" onclick="closeAll()">✕</button>
-    <div class="modal-title">🔗 링크 공유</div>
-    <div class="modal-sub" id="share-name"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
-      <div style="display:flex;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-        <div id="share-url" style="flex:1;font-size:12px;color:var(--text2);word-break:break-all;line-height:1.5"></div>
-      </div>
-      <button class="btn btn-accent" onclick="copyShareUrl()" id="copy-btn" style="width:100%;padding:13px;font-size:14px;font-weight:700;border-radius:12px">
-        📋 링크 복사하기
-      </button>
+    <div class="modal-title" style="font-size:16px">🔗 링크 공유</div>
+    <div class="modal-sub" id="share-name" style="font-size:13px;margin-bottom:12px"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:10px">
+      <div id="share-url" style="font-size:11px;color:var(--text2);word-break:break-all;line-height:1.6;user-select:all"></div>
     </div>
+    <button class="btn btn-accent" onclick="copyShareUrl()" id="copy-btn" style="width:100%;padding:12px;font-size:14px;font-weight:700;border-radius:10px;border:none;cursor:pointer">
+      <span style="font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">📋</span> 링크 복사하기
+    </button>
   </div>
 </div>
 
@@ -1203,13 +1201,11 @@ function showABCPopup(){
     shareBtn.style.display='';
     shareBtn.onclick=function(){
       const url='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/';
-      const ok=()=>{
-        shareBtn.textContent='✅';
-        setTimeout(()=>{shareBtn.textContent='🔗';},1500);
-      };
-      if(navigator.clipboard&&navigator.clipboard.writeText){
-        navigator.clipboard.writeText(url).then(ok).catch(()=>{_fbCopy(url,ok);});
-      } else { _fbCopy(url,ok); }
+      document.getElementById('share-name').textContent='첫번째공인중개사무소';
+      document.getElementById('share-url').textContent=url;
+      const btn=document.getElementById('copy-btn');
+      if(btn){btn.innerHTML='<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">📋</span> 링크 복사하기';btn.style.background='';btn.style.color='';}
+      show('ov-share');
     };
   }
   document.getElementById('dp-tags').innerHTML=`<span class="dtag" style="background:rgba(255,100,0,.18);color:#ff8c00">공인중개사사무소</span>`;
@@ -2629,11 +2625,12 @@ function _fbCopy(text,cb){
 }
 function copyShareUrl(){
   const item=activePopupItem||_shareItem;
-  if(!item)return;
-  const url=`https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/?lid=${item.lid}`;
+  const url=item
+    ?`https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/?lid=${item.lid}`
+    :'https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/';
   const btn=document.getElementById('copy-btn');
   const ok=()=>{
-    if(btn){btn.textContent='✅ 복사됐습니다!';btn.style.background='#3ecf8e';btn.style.color='#fff';}
+    if(btn){btn.innerHTML='✅ 복사됐습니다!';btn.style.background='#3ecf8e';btn.style.color='#fff';}
     setTimeout(()=>closeAll(),1200);
   };
   if(navigator.clipboard&&navigator.clipboard.writeText){
