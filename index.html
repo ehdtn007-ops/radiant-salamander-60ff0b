@@ -11,12 +11,7 @@
 <!-- SheetJS (엑셀 내보내기) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- 카카오 공유 -->
-<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
-<script>
-window.addEventListener('load',function(){
-  if(window.Kakao&&!Kakao.isInitialized()) Kakao.init('101abfc1122832bf82c274c879984a27');
-});
-</script>
+<!-- 카카오 공유 SDK 제거됨 -->
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJ90L8kSbfEhEfxJ_A1Bb5UPDQZhFFKkE",
@@ -749,25 +744,14 @@ select:hover,select:focus{border-color:var(--accent)}
 <div class="overlay hidden" id="ov-share">
   <div class="modal" style="width:380px">
     <button class="modal-close" onclick="closeAll()">✕</button>
-    <div class="modal-title">🔗 매물 공유</div>
+    <div class="modal-title">🔗 링크 공유</div>
     <div class="modal-sub" id="share-name"></div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
-      <!-- URL 복사 -->
       <div style="display:flex;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
         <div id="share-url" style="flex:1;font-size:12px;color:var(--text2);word-break:break-all;line-height:1.5"></div>
-        <button class="btn btn-sm btn-accent" onclick="copyShareUrl()" id="copy-btn">복사</button>
       </div>
-      <!-- 카카오톡 공유 -->
-      <button onclick="shareKakao()" id="kakao-share-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:#FEE500;color:#191919;font-weight:700;font-size:14px;border:none;border-radius:12px;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
-        <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" style="width:22px;height:22px" onerror="this.style.display='none'">
-        <span id="kakao-btn-label">카카오톡으로 공유</span>
-      </button>
-      <div id="kakao-share-hint" style="display:none;font-size:11px;color:var(--text2);text-align:center;line-height:1.6">
-        💡 URL이 복사됩니다 → 카카오톡 채팅창에서 <b style="color:var(--text)">붙여넣기</b>로 공유하세요
-      </div>
-      <!-- 기기 공유 (Web Share API, 모바일에서 자동 표시) -->
-      <button id="native-share-btn" onclick="nativeShare()" style="display:none;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-weight:600;font-size:13px;border-radius:12px;cursor:pointer">
-        📤 다른 앱으로 공유
+      <button class="btn btn-accent" onclick="copyShareUrl()" id="copy-btn" style="width:100%;padding:13px;font-size:14px;font-weight:700;border-radius:12px">
+        📋 링크 복사하기
       </button>
     </div>
   </div>
@@ -1218,17 +1202,14 @@ function showABCPopup(){
   if(shareBtn){
     shareBtn.style.display='';
     shareBtn.onclick=function(){
-      if(!window.Kakao||!Kakao.isInitialized()){alert('카카오 SDK 로딩 중입니다. 잠시 후 다시 시도해주세요.');return;}
       const url='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/';
-      Kakao.Share.sendDefault({
-        objectType:'feed',
-        content:{
-          title:'첫번째공인중개사무소',
-          description:'고시원·모텔 매매/월세 급매물 전문 중개\n📍 서울특별시 중구 을지로9길 8 7층\n📞 02-6404-5455',
-          link:{mobileWebUrl:url,webUrl:url}
-        },
-        buttons:[{title:'매물 보러가기',link:{mobileWebUrl:url,webUrl:url}}]
-      });
+      const ok=()=>{
+        shareBtn.textContent='✅';
+        setTimeout(()=>{shareBtn.textContent='🔗';},1500);
+      };
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(ok).catch(()=>{_fbCopy(url,ok);});
+      } else { _fbCopy(url,ok); }
     };
   }
   document.getElementById('dp-tags').innerHTML=`<span class="dtag" style="background:rgba(255,100,0,.18);color:#ff8c00">공인중개사사무소</span>`;
@@ -1526,9 +1507,8 @@ function showBoardDetail(item){
         <!-- 공유 + 지도에서 보기 버튼 -->
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
           <button onclick="openSharePopupFor(window._bdItem)"
-            style="width:100%;background:#FEE500;border:none;color:#191919;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-            <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" style="width:18px;height:18px" onerror="this.style.display='none'">
-            카카오톡 공유하기
+            style="width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            📋 링크 복사하기
           </button>
           <button id="bd-map-btn"
             style="width:100%;background:rgba(79,140,255,.12);border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">
@@ -2254,8 +2234,10 @@ function renderAListings(){
   <table class="atable" style="min-width:900px">
     <thead>
       <tr style="border-bottom:none">
-        <th style="width:32px"><input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px"></th>
-        <th style="width:110px">노출</th>
+        <th style="width:110px">
+          전체선택<br>
+          <input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px;margin-top:5px">
+        </th>
         <th style="width:90px">
           담당자
           <select id="alf-owner" style="${selStyle}" onchange="renderAListings()">
@@ -2286,12 +2268,14 @@ function renderAListings(){
       const isHidden=!!item.hidden;
       const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
       return `<tr style="${isHidden?'opacity:.5':''}">
-        <td><input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px"></td>
         <td>
-          <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
-            style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
-            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">👁 노출</span>
-            <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">🙈 숨김</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <input type="checkbox" class="row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px">
+            <div onclick="toggleListingHidden('${item.ownerId||''}','${item.lid}')"
+              style="display:inline-flex;align-items:center;gap:0;background:var(--surface3);border:1.5px solid ${isHidden?'rgba(255,107,107,.4)':'rgba(62,207,142,.4)'};border-radius:20px;padding:2px;cursor:pointer;transition:all .2s">
+              <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${!isHidden?'linear-gradient(135deg,#3ecf8e,#2bb87a)':'transparent'};color:${!isHidden?'#fff':'rgba(255,255,255,.3)'}">👁 노출</span>
+              <span style="padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;background:${isHidden?'linear-gradient(135deg,#ff6b6b,#e84545)':'transparent'};color:${isHidden?'#fff':'rgba(255,255,255,.3)'}">🙈 숨김</span>
+            </div>
           </div>
         </td>
         <td style="font-size:11px;font-weight:700;color:var(--accent)">${item.ownerName||'기본'}</td>
@@ -2620,25 +2604,11 @@ function openSharePopup(){
 function openSharePopupFor(item){
   if(!item)return;
   _shareItem=item;
-  const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
+  const url=`https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/?lid=${item.lid}`;
   document.getElementById('share-name').textContent=item.name;
   document.getElementById('share-url').textContent=url;
-  document.getElementById('copy-btn').textContent='복사';
-  document.getElementById('copy-btn').style.background='';
-  // 모바일 여부에 따라 버튼 안내 조정
-  const isMob=navigator.share||/Android|iPhone|iPad/i.test(navigator.userAgent);
-  const lbl=document.getElementById('kakao-btn-label');
-  const hint=document.getElementById('kakao-share-hint');
-  const nb=document.getElementById('native-share-btn');
-  if(isMob){
-    if(lbl)lbl.textContent='카카오톡으로 공유';
-    if(hint)hint.style.display='none';
-    if(nb)nb.style.display='none';
-  } else {
-    if(lbl)lbl.textContent='카카오톡 공유 (URL 복사)';
-    if(hint)hint.style.display='block';
-    if(nb)nb.style.display='none';
-  }
+  const btn=document.getElementById('copy-btn');
+  if(btn){btn.textContent='📋 링크 복사하기';btn.style.background='';}
   show('ov-share');
 }
 function _doClipboard(url,btn){
@@ -2660,41 +2630,15 @@ function _fbCopy(text,cb){
 function copyShareUrl(){
   const item=activePopupItem||_shareItem;
   if(!item)return;
-  const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
-  _doClipboard(url, document.getElementById('copy-btn'));
-}
-function shareKakao(){
-  const item=activePopupItem||_shareItem;
-  if(!item)return;
-  if(!window.Kakao||!Kakao.isInitialized()){alert('카카오 SDK 로딩 중입니다. 잠시 후 다시 시도해주세요.');return;}
-  const url='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/?lid='+item.lid;
-  const isRent=item.deal==='월세';
-  const priceText=isRent?'보증금 '+won(item.deposit||0)+' / 월 '+won(item.monthly||0):'매매가 '+won(item.price||0);
-  Kakao.Share.sendDefault({
-    objectType:'feed',
-    content:{
-      title:'첫번째부동산 고시원·모텔 급매물',
-      description:item.name+' | '+item.type+' · '+item.deal+' · '+priceText+'\n📍 '+maskAddr(item),
-      link:{mobileWebUrl:url,webUrl:url}
-    },
-    buttons:[{title:'매물 보기',link:{mobileWebUrl:url,webUrl:url}}]
-  });
-}
-function nativeShare(){
-  const item=activePopupItem||_shareItem;
-  if(!item||!navigator.share)return;
-  const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
-  const isRent=item.deal==='월세';
-  const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
-  navigator.share({title:item.name,text:`${item.name}\n${item.type}·${item.deal}·${priceText}\n📍${maskAddr(item)}`,url}).catch(()=>{});
-}
-function _shareToast(){
-  const old=document.getElementById('_stt');if(old)old.remove();
-  const t=document.createElement('div');t.id='_stt';
-  t.innerHTML='<span style="font-size:20px">📋</span><div><b style="font-size:13px">URL 복사됨</b><br><span style="font-size:12px;opacity:.85">카카오톡 채팅창에 <b>붙여넣기</b>로 공유하세요</span></div>';
-  t.style.cssText='position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#1e2130;border:1px solid rgba(62,207,142,.5);color:#f0f2ff;padding:13px 18px;border-radius:14px;box-shadow:0 6px 28px rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;gap:12px;width:min(310px,88vw);animation:slideUp .22s;backdrop-filter:blur(8px)';
-  document.body.appendChild(t);
-  setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),420);},3500);
+  const url=`https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/?lid=${item.lid}`;
+  const btn=document.getElementById('copy-btn');
+  const ok=()=>{
+    if(btn){btn.textContent='✅ 복사됐습니다!';btn.style.background='#3ecf8e';btn.style.color='#fff';}
+    setTimeout(()=>closeAll(),1200);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok).catch(()=>{_fbCopy(url,ok);});
+  } else { _fbCopy(url,ok); }
 }
 // URL 파라미터로 매물 자동 오픈 (loadFromFirebase 완료 후 호출됨)
 function checkUrlLid(){
