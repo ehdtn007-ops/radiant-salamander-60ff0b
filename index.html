@@ -13,6 +13,12 @@
 <!-- 카카오 공유 -->
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <script>
+// 카카오 JavaScript 앱키로 SDK 초기화
+if(window.Kakao && !Kakao.isInitialized()){
+  Kakao.init('101abfc1122832bf82c274c879984a27');
+}
+</script>
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJ90L8kSbfEhEfxJ_A1Bb5UPDQZhFFKkE",
   authDomain: "bssbs-25cc1.firebaseapp.com",
@@ -2597,14 +2603,24 @@ function shareKakao(){
   const url=`${location.origin}${location.pathname}?lid=${item.lid}`;
   const isRent=item.deal==='월세';
   const priceText=isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:`매매가 ${won(item.price||0)}`;
-  const shareText=`${item.name}\n${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`;
 
-  // 모바일: Web Share API → 카카오톡 포함 모든 앱 공유 (앱키 불필요)
-  if(navigator.share){
-    navigator.share({title:item.name, text:shareText, url}).catch(()=>{});
-    return;
+  // 카카오 SDK로 직접 공유 (모바일: 카카오톡 앱 열림 / PC: 카카오톡 공유 팝업)
+  if(window.Kakao && Kakao.isInitialized() && Kakao.Share){
+    try{
+      Kakao.Share.sendDefault({
+        objectType:'feed',
+        content:{
+          title:item.name,
+          description:`${item.type} · ${item.deal} · ${priceText}\n📍 ${maskAddr(item)}`,
+          imageUrl:'https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png',
+          link:{mobileWebUrl:url, webUrl:url}
+        },
+        buttons:[{title:'매물 보기', link:{mobileWebUrl:url, webUrl:url}}]
+      });
+      return;
+    }catch(e){console.warn('Kakao.Share 실패:',e);}
   }
-  // PC: URL 클립보드 복사 + 토스트 안내
+  // 폴백: PC에서 SDK 미작동 시 URL 복사
   _doClipboard(url, null);
   _shareToast();
 }
