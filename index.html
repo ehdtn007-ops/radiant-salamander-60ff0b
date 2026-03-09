@@ -799,10 +799,10 @@ select:hover,select:focus{border-color:var(--accent)}
   <button class="hbtn" id="login-trigger" onclick="show('ov-login')">로그인</button>
   <div class="filters">
     <div class="fg-h"><span class="fl-h">종류</span>
-      <select id="ff-type"><option value="all">전체</option><option value="고시원" selected>고시원</option><option value="모텔">모텔</option></select>
+      <select id="ff-type"><option value="all" selected>전체</option><option value="고시원">고시원</option><option value="모텔">모텔</option></select>
     </div>
     <div class="fg-h"><span class="fl-h">거래</span>
-      <select id="ff-deal"><option value="all">전체</option><option value="매매">매매</option><option value="월세" selected>월세</option></select>
+      <select id="ff-deal"><option value="all" selected>전체</option><option value="매매">매매</option><option value="월세">월세</option></select>
     </div>
     <div class="fg-h" id="ff-gstype-wrap" style="align-items:center;gap:4px">
       <span class="fl-h">유형</span>
@@ -1016,7 +1016,7 @@ function initProvDropdowns(){
   const provs=Object.keys(REGION);
   const ffProv=document.getElementById('ff-prov');
   provs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ffProv.appendChild(o);});
-  ffProv.addEventListener('change',()=>{updateHeaderGu();activeId=null;closePopupSilent();render();});
+  ffProv.addEventListener('change',()=>{updateHeaderGu();activeId=null;closePopupSilent();render();saveFilters();});
   initModalRegion('l');
   initModalRegion('el'); // 매물 수정 모달용
 }
@@ -2073,22 +2073,25 @@ function closePopupSilent(){
 ['ff-type','ff-deal','ff-price','ff-period','ff-rooms'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
   updateGsTypeFilterVisibility();
   activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();
+  saveFilters();
 }));
 document.getElementById('ff-gs-all').addEventListener('change',()=>{
   ['ff-gs-1','ff-gs-2','ff-gs-3'].forEach(id=>{const cb=document.getElementById(id);if(cb)cb.checked=false;});
   document.getElementById('ff-gs-all').checked=true;
   activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();
+  saveFilters();
 });
 ['ff-gs-1','ff-gs-2','ff-gs-3'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
   const allCb=document.getElementById('ff-gs-all');
   const anyChecked=['ff-gs-1','ff-gs-2','ff-gs-3'].some(id2=>{const cb=document.getElementById(id2);return cb&&cb.checked;});
   if(allCb)allCb.checked=!anyChecked;
   activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();
+  saveFilters();
 }));
 document.getElementById('ltype').addEventListener('change',()=>toggleGsType('l'));
 document.getElementById('eltype') && document.getElementById('eltype').addEventListener('change',()=>toggleGsType('el'));
-document.getElementById('ff-area').addEventListener('change',()=>{updateHeaderDong();activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();});
-document.getElementById('ff-dong').addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();});
+document.getElementById('ff-area').addEventListener('change',()=>{updateHeaderDong();activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();saveFilters();});
+document.getElementById('ff-dong').addEventListener('change',()=>{activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();saveFilters();});
 
 // ════════════════════════════════════════════
 // 헤더 렌더
@@ -2862,7 +2865,7 @@ function openSharePopupFor(item){
   document.getElementById('share-name').textContent=item.name;
   document.getElementById('share-url').textContent=url;
   const btn=document.getElementById('copy-btn');
-  if(btn){btn.innerHTML='<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">📋</span> 링크 복사하기';btn.style.background='';btn.style.color='';}
+  if(btn){btn.textContent='📋 링크 복사하기';btn.style.background='';}
   show('ov-share');
 }
 function _doClipboard(url,btn){
@@ -3233,9 +3236,47 @@ function saveProfilePw(){
 }
 
 // ════════════════════════════════════════════
+// 필터 localStorage 저장/복원
+// ════════════════════════════════════════════
+const FILTER_IDS=['ff-type','ff-deal','ff-price','ff-period','ff-rooms','ff-prov','ff-area','ff-dong'];
+const FILTER_CB_IDS=['ff-gs-all','ff-gs-1','ff-gs-2','ff-gs-3'];
+
+function saveFilters(){
+  var f={};
+  FILTER_IDS.forEach(function(id){var el=document.getElementById(id);if(el)f[id]=el.value;});
+  var cbs={};
+  FILTER_CB_IDS.forEach(function(id){var el=document.getElementById(id);if(el)cbs[id]=el.checked;});
+  f['_cbs']=cbs;
+  try{localStorage.setItem('savedFilters',JSON.stringify(f));}catch(e){}
+}
+
+function loadFilters(){
+  try{
+    var raw=localStorage.getItem('savedFilters');
+    if(!raw)return;
+    var f=JSON.parse(raw);
+    FILTER_IDS.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el&&f[id]!==undefined){
+        var has=Array.from(el.options).some(function(o){return o.value===f[id];});
+        if(has)el.value=f[id];
+      }
+    });
+    if(f['_cbs']){
+      FILTER_CB_IDS.forEach(function(id){
+        var el=document.getElementById(id);
+        if(el&&f['_cbs'][id]!==undefined)el.checked=f['_cbs'][id];
+      });
+    }
+    updateGsTypeFilterVisibility();
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════
 // 초기화 (Firebase에서 데이터 로드 후 시작)
 // ════════════════════════════════════════════
 initProvDropdowns();
+loadFilters();
 renderHeader();
 updateGsTypeFilterVisibility();
 toggleGsType('l');
