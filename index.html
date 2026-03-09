@@ -914,10 +914,8 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="dpop-info-block" id="dp-info-block"></div>
       <!-- 담당자 -->
       <div class="dpop-agent-block" id="dp-agent"></div>
-      <div style="padding:0 14px 10px">
-        <button id="dp-kakao-btn" onclick="kakaoShare(activePopupItem)" style="width:100%;background:#FEE500;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#191919;letter-spacing:-0.3px;box-shadow:0 2px 8px rgba(254,229,0,.4)">💬 카카오톡으로 공유하기</button>
-      </div>
-      <div style="padding:0 14px 14px">
+      <div style="padding:0 14px 10px"><button onclick="kakaoShare(activePopupItem)" style="width:100%;background:#FEE500;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#191919">💬 카카오톡으로 공유하기</button></div>
+      <div style="padding:10px 14px 14px">
         <div style="display:flex;gap:8px">
           <button id="dp-cafe-btn" onclick="copyCafePost(activePopupItem,this)" style="flex:1;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">카페 광고용 저장<br>(이미지)</button>
           <button onclick="copyCafeText(activePopupItem,this)" style="flex:1;background:linear-gradient(135deg,#4f8cff,#2563eb);border:none;color:#fff;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">고시원넷 광고용 저장<br>(텍스트)</button>
@@ -1546,8 +1544,7 @@ function showBoardDetail(item){
         </div>
         <!-- 담당자 -->
         <div class="dpop-agent-block">${agentCardHtml}</div>
-        <!-- 카카오톡 공유 버튼 -->
-        <div style="padding:0 18px 10px"><button onclick="kakaoShare(window._bdItem)" style="width:100%;background:#FEE500;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#191919;letter-spacing:-0.3px;box-shadow:0 2px 8px rgba(254,229,0,.4)">💬 카카오톡으로 공유하기</button></div>
+        <div style="padding:0 18px 10px"><button onclick="kakaoShare(window._bdItem)" style="width:100%;background:#FEE500;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#191919">💬 카카오톡으로 공유하기</button></div>
         <!-- 공유 + 지도에서 보기 버튼 -->
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;gap:8px">
@@ -3306,43 +3303,40 @@ async function loadFromFirebase(){
 }
 
 loadFromFirebase();
-
-function kakaoShare(item){
-  if(!window.Kakao){alert('카카오 SDK 로딩 중입니다. 잠시 후 다시 시도해주세요.');return;}
-  if(!Kakao.isInitialized())Kakao.init('101abfc1122832bf82c274c879984a27');
-  const name=item?item.name||'매물 정보':'첫번째공인중개사사무소';
-  const addr=item?maskAddr(item):'서울특별시 중구 을지로9길 8 7층';
-  const pageUrl=location.href.split('?')[0];
-  let priceText='';
-  if(item){
-    if(item.type==='월세'&&item.deposit&&item.monthly)priceText=`월세 ${item.deposit}/${item.monthly}`;
-    else if(item.type==='전세'&&item.jeonse)priceText=`전세 ${item.jeonse}`;
-    else if(item.type==='매매'&&item.sale)priceText=`매매 ${item.sale}`;
-    else if(item.monthlyFee)priceText=`월 ${item.monthlyFee}만원`;
-  }
-  const desc=[priceText,addr].filter(Boolean).join(' | ');
-  Kakao.Share.sendDefault({
-    objectType:'feed',
-    content:{
-      title:name,
-      description:desc||'첫번째공인중개사사무소 매물 정보',
-      imageUrl:'https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/og-image.png',
-      link:{mobileWebUrl:pageUrl,webUrl:pageUrl}
-    },
-    buttons:[{title:'매물 보러가기',link:{mobileWebUrl:pageUrl,webUrl:pageUrl}}]
-  });
-}
 </script>
 <script>
-(function(){
-  var s=document.createElement('script');
-  s.src='https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
-  s.crossOrigin='anonymous';
-  s.onload=function(){
-    if(window.Kakao&&!Kakao.isInitialized())Kakao.init('101abfc1122832bf82c274c879984a27');
-  };
-  document.head.appendChild(s);
-})();
+function kakaoShare(item){
+  var name=item?item.name||'매물 정보':'첫번째공인중개사사무소';
+  var addr=item?maskAddr(item):'서울특별시 중구 을지로9길 8 7층';
+  var pageUrl='https://ehdtn007-ops.github.io/radiant-salamander-60ff0b/';
+  var priceText='';
+  if(item){
+    if(item.type==='월세'&&item.deposit&&item.monthly)priceText='월세 '+item.deposit+'/'+item.monthly;
+    else if(item.type==='전세'&&item.jeonse)priceText='전세 '+item.jeonse;
+    else if(item.type==='매매'&&item.sale)priceText='매매 '+item.sale;
+    else if(item.monthlyFee)priceText='월 '+item.monthlyFee+'만원';
+  }
+  var text=name+(priceText?' ['+priceText+']':'')+(addr?' | '+addr:'')+'
+'+pageUrl;
+  var ua=navigator.userAgent.toLowerCase();
+  var isMobile=/android|iphone|ipad/.test(ua);
+  if(isMobile){
+    var timer=setTimeout(function(){
+      if(navigator.share){navigator.share({title:name,url:pageUrl});}
+      else{navigator.clipboard&&navigator.clipboard.writeText(text).then(function(){alert('클립보드에 복사됐습니다. 카카오톡에 붙여넣기 해주세요.');});}
+    },1500);
+    window.addEventListener('blur',function(){clearTimeout(timer);},{once:true});
+    location.href='kakaotalk://send?text='+encodeURIComponent(text);
+  } else {
+    location.href='kakaotalk://send?text='+encodeURIComponent(text);
+    setTimeout(function(){
+      navigator.clipboard&&navigator.clipboard.writeText(text).then(function(){
+        alert('카카오톡 PC앱이 열리지 않으면 내용이 복사됐습니다.
+카카오톡에 붙여넣기 해주세요.');
+      });
+    },1500);
+  }
+}
 </script>
 </body>
 </html>
