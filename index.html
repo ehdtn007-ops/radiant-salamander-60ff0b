@@ -8,8 +8,6 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<!-- SheetJS (엑셀 내보내기) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- 카카오 공유 -->
 <!-- 카카오 공유 SDK 제거됨 -->
 <script>
@@ -645,12 +643,12 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="atab active" onclick="atab('members')">👥 회원 관리 <span id="pending-cnt-badge" style="font-size:10px;color:var(--yellow)"></span></div>
       <div class="atab" onclick="atab('listings')">🏠 매물 관리</div>
       <div class="atab" onclick="atab('stats')">📊 통계</div>
-      <div class="atab" onclick="atab('excel')">📥 엑셀 내보내기</div>
+      <div class="atab" onclick="atab('profile')">👤 내 정보 변경</div>
     </div>
     <div class="asec active" id="as-members"></div>
     <div class="asec" id="as-listings"></div>
     <div class="asec" id="as-stats"></div>
-    <div class="asec" id="as-excel"></div>
+    <div class="asec" id="as-profile"></div>
   </div>
 </div>
 
@@ -1496,7 +1494,7 @@ function showBoardDetail(item){
     const owner=users.find(u=>u.id===item.ownerId);
     if(owner){
       ownerPhone=owner.phone||'';
-      agentCardHtml=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
+      agentCardHtml=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">'담당자'</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
     }
   } else {
     ownerPhone='02-6404-5455';
@@ -2032,7 +2030,7 @@ function showPopup(item){
   if(item.ownerId){
     const owner=users.find(u=>u.id===item.ownerId);
     if(owner){
-      ag.innerHTML=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${owner.license?`공인중개사 ${owner.license}`:'담당자'}</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
+      ag.innerHTML=`<a href="tel:${owner.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">'담당자'</div><div class="agent-name">${owner.name}</div><div class="agent-phone">${owner.phone}</div></div></div></a>`;
     } else ag.innerHTML='';
   } else {
     ag.innerHTML=`<a href="tel:02-6404-5455" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">공인중개사</div><div class="agent-name">첫번째공인중개사사무소</div><div class="agent-phone">02-6404-5455</div></div></div></a>`;
@@ -2172,7 +2170,6 @@ function doRegister(){
   const pw=document.getElementById('rp').value,pw2=document.getElementById('rp2').value;
   const name=document.getElementById('rn').value.trim();
   const phone=document.getElementById('rphone').value.trim();
-  const license=document.getElementById('rlicense')?document.getElementById('rlicense').value.trim():'';
   if(!id||id.length<4){err.textContent='아이디는 4자 이상이어야 합니다';err.classList.add('show');return;}
   if(!pw||pw.length<6){err.textContent='비밀번호는 6자 이상이어야 합니다';err.classList.add('show');return;}
   if(pw!==pw2){err.textContent='비밀번호가 일치하지 않습니다';err.classList.add('show');return;}
@@ -2259,13 +2256,13 @@ function doAddListing(){
 // ════════════════════════════════════════════
 function openAdmin(){if(!currentUser||currentUser.role!=='master')return;show('ov-admin');renderAMembers();}
 function atab(t){
-  const tabs=['members','listings','stats','excel'];
+  const tabs=['members','listings','stats','profile'];
   document.querySelectorAll('.atab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   document.querySelectorAll('.asec').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   if(t==='members') renderAMembers();
   else if(t==='listings') renderAListings();
   else if(t==='stats') renderStats();
-  else if(t==='excel') renderExcelPanel();
+  else if(t==='profile') renderProfilePanel();
 }
 function renderAMembers(){
   const el=document.getElementById('as-members');
@@ -2282,7 +2279,6 @@ function renderAMembers(){
       <td><code style="color:var(--accent);font-size:11px">${u.id}</code></td>
       <td style="font-weight:600">${u.name}</td>
       <td style="color:var(--text2);font-size:11px">${u.phone||'-'}</td>
-      <td style="color:var(--text2);font-size:11px">${u.license||'-'}</td>
       <td style="text-align:center">${(u.listings||[]).length}건</td>
       <td><span class="sbadge s-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status==='active'?'활성':u.status==='pending'?'승인대기':'차단'}</span></td>
       <td><div class="abts">
@@ -2494,7 +2490,7 @@ function doEditUser(){
   render();
   if(activePopupItem&&activePopupItem.ownerId===uid){
     const ag=document.getElementById('dp-agent');
-    if(ag) ag.innerHTML=`<a href="tel:${u.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">${u.license?`공인중개사 ${u.license}`:'담당자'}</div><div class="agent-name">${u.name}</div><div class="agent-phone">${u.phone}</div></div></div></a>`;
+    if(ag) ag.innerHTML=`<a href="tel:${u.phone}" style="text-decoration:none;display:block" class="agent-card agent-card-link"><div class="agent-body"><div class="agent-avatar" style="background:linear-gradient(135deg,#3ecf8e,#2bb87a);font-size:20px;width:42px;height:42px">📞</div><div><div class="agent-role">'담당자'</div><div class="agent-name">${u.name}</div><div class="agent-phone">${u.phone}</div></div></div></a>`;
   }
 }
 function delListing(ownerId,lid){
@@ -2961,24 +2957,48 @@ function copyCafePost(item,btn){
     ['설 명', item.desc||''],
   ].filter(Boolean);
 
-  const rowsHtml=rows.map(([k,v])=>`
-    <tr>
-      <td style="width:160px;padding:11px 15px;font-size:15px;font-weight:700;color:#7b3a10;border:1px solid #e8c4a0;background:#fde8d8;vertical-align:top;white-space:pre-wrap;letter-spacing:-0.3px">${k}</td>
-      <td style="padding:11px 15px;font-size:15px;color:#1a1a1a;border:1px solid #e8c4a0;background:#fff;vertical-align:top;white-space:pre-wrap;line-height:1.8">${v}</td>
-    </tr>`).join('');
+  const rowsHtml=rows.map(([k,v],i)=>{
+    const isPrice=['보 증 금','임 대 료','매 매 가','합 금 액','권 리 금'].includes(k);
+    const isTot=k==='합 금 액';
+    const tdLeft=`width:155px;padding:12px 16px;font-size:15px;font-weight:800;color:${isTot?'#fff':'#6b2f0a'};border:2px solid ${isTot?'#b85c00':'#d4915a'};background:${isTot?'linear-gradient(135deg,#c0392b,#e74c3c)':'linear-gradient(135deg,#fde8d8,#f9cba8)'};vertical-align:top;white-space:pre-wrap;letter-spacing:0px`;
+    const tdRight=`padding:12px 16px;font-size:${isTot?'17px':'15px'};font-weight:${isTot?'900':'500'};color:${isTot?'#c0392b':'#1a1a1a'};border:2px solid ${isTot?'#e8a0a0':'#d4915a'};background:${isTot?'#fff8f8':'#fff'};vertical-align:top;white-space:pre-wrap;line-height:1.8`;
+    return `<tr><td style="${tdLeft}">${k}</td><td style="${tdRight}">${v}</td></tr>`;
+  }).join('');
 
   const tpl=`
-  <div id="_cafe_tpl" style="font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:#fff;padding:20px;width:620px;box-sizing:border-box">
-    <table style="width:100%;border-collapse:collapse;border:1px solid #e8c4a0;margin-bottom:20px">
-      ${rowsHtml}
-    </table>
-    <div style="font-size:13px;color:#555;line-height:2.1;padding:6px 2px;border-top:1px solid #e8c4a0;margin-top:4px">
-      <div>◎ 중개업체명 : 첫번째공인중개사사무소</div>
-      <div>◎ 대표 : 장혜정</div>
-      <div>◎ 중개사무실 위치 : 서울특별시 중구 을지로9길 8 7층</div>
-      <div>◎ 등록번호 : 11140-2025-00057</div>
-      <div>◎ TEL : ${agentPhone}</div>
+  <div id="_cafe_tpl" style="font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:#fff8f4;padding:0;width:640px;box-sizing:border-box">
+    <!-- 상단 헤더 -->
+    <div style="background:linear-gradient(135deg,#c0392b 0%,#e67e22 50%,#f39c12 100%);padding:22px 28px 18px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08)"></div>
+      <div style="position:absolute;bottom:-30px;left:60px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.06)"></div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600;letter-spacing:2px;margin-bottom:6px">PROPERTY LISTING</div>
+      <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.3)">${item.name}</div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.3)">${item.type}</span>
+        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.3)">${item.deal}</span>
+      </div>
     </div>
+    <!-- 표 -->
+    <div style="padding:16px 16px 0">
+      <table style="width:100%;border-collapse:collapse;border:2px solid #d4915a;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(180,80,0,0.12)">
+        ${rowsHtml}
+      </table>
+    </div>
+    <!-- 하단 명함 -->
+    <div style="margin:16px 16px 0;padding:16px 20px;background:linear-gradient(135deg,#2c2c2c,#444);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:15px;font-weight:900;color:#f39c12;letter-spacing:-0.3px">첫번째공인중개사사무소</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:4px;line-height:1.9">
+          <div>대표 : 장혜정 &nbsp;|&nbsp; 등록번호 : 11140-2025-00057</div>
+          <div>서울특별시 중구 을지로9길 8 7층</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:2px">문의전화</div>
+        <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:1px">${agentPhone}</div>
+      </div>
+    </div>
+    <div style="height:16px"></div>
   </div>`;
 
   // 숨겨진 div에 렌더링
@@ -3135,80 +3155,81 @@ function renderStats(){
 }
 
 // ════════════════════════════════════════════
-// 엑셀 내보내기
+// 내 정보 변경
 // ════════════════════════════════════════════
-function renderExcelPanel(){
-  const el=document.getElementById('as-excel');
+function renderProfilePanel(){
+  const el=document.getElementById('as-profile');
+  const u=currentUser;
   el.innerHTML=`
-  <div style="padding:8px 0">
+  <div style="padding:8px 0;max-width:480px">
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px">📋 매물 목록 내보내기</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:14px">전체 매물 정보를 엑셀 파일로 다운로드합니다</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-accent" onclick="exportListingsExcel()">📥 전체 매물 엑셀 다운로드</button>
-        <button class="btn" onclick="exportListingsExcel('고시원')">고시원만</button>
-        <button class="btn" onclick="exportListingsExcel('모텔')">모텔만</button>
-      </div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px">👤 기본 정보 변경</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">이름</label>
+          <input id="pf-name" class="inp" value="${u.name||''}" placeholder="이름" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">전화번호</label>
+          <input id="pf-phone" class="inp" value="${u.phone||''}" placeholder="전화번호" style="width:100%;margin-top:4px">
+        </div>
+        ${u.role==='master'||u.role==='admin'?'':''}      </div>
+      <button class="btn btn-accent" onclick="saveProfileInfo()" style="margin-top:14px;width:100%">💾 기본 정보 저장</button>
+      <div id="pf-info-msg" style="font-size:12px;margin-top:8px;text-align:center"></div>
     </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px">👥 회원 목록 내보내기</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:14px">회원 정보를 엑셀 파일로 다운로드합니다</div>
-      <button class="btn btn-accent" onclick="exportUsersExcel()">📥 회원 목록 엑셀 다운로드</button>
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px">🔒 비밀번호 변경</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">현재 비밀번호</label>
+          <input id="pf-pw-cur" class="inp" type="password" placeholder="현재 비밀번호" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">새 비밀번호</label>
+          <input id="pf-pw-new" class="inp" type="password" placeholder="새 비밀번호 (6자 이상)" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">새 비밀번호 확인</label>
+          <input id="pf-pw-new2" class="inp" type="password" placeholder="새 비밀번호 재입력" style="width:100%;margin-top:4px">
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="saveProfilePw()" style="margin-top:14px;width:100%">🔑 비밀번호 변경</button>
+      <div id="pf-pw-msg" style="font-size:12px;margin-top:8px;text-align:center"></div>
     </div>
   </div>`;
 }
 
-function exportListingsExcel(typeFilter){
-  let items=buildAll();
-  if(typeFilter)items=items.filter(i=>i.type===typeFilter);
-  const rows=items.map(item=>({
-    'LID':item.lid,
-    '종류':item.type,
-    '거래':item.deal,
-    '매물명':item.name,
-    '시도':item.prov,
-    '구군':item.area,
-    '동':item.dong||'',
-    '매매가(만원)':item.price||'',
-    '보증금(만원)':item.deposit||'',
-    '월세(만원)':item.monthly||'',
-    '권리금(만원)':item.keymoney||0,
-    '방수':item.rooms||0,
-    '욕실수':item.baths||0,
-    '면적(㎡)':item.area2||0,
-    '층':item.floor||'',
-    '총층':item.totalfloor||'',
-    '방향':item.direction||'',
-    '주차':item.parking||0,
-    '관리비(만원)':item.maintenance||0,
-    '준공연도':item.year||'',
-    '입주가능일':item.movein||'',
-    '위반건축물':item.illegal||'해당없음',
-    '담당자':item.ownerId?(users.find(u=>u.id===item.ownerId)||{name:'기본'}).name:'기본',
-    '연락처':item.ownerId?(users.find(u=>u.id===item.ownerId)||{phone:''}).phone:'02-6404-5455',
-    '노출여부':item.hidden?'숨김':'노출',
-    '특징설명':item.desc||'',
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'매물목록');
-  const fname=`매물목록${typeFilter?'_'+typeFilter:''}_${new Date().toISOString().slice(0,10)}.xlsx`;
-  XLSX.writeFile(wb,fname);
+function saveProfileInfo(){
+  const name=document.getElementById('pf-name').value.trim();
+  const phone=document.getElementById('pf-phone').value.trim();
+  const msg=document.getElementById('pf-info-msg');
+  if(!name){msg.style.color='var(--red)';msg.textContent='이름을 입력해주세요.';return;}
+  currentUser.name=name;
+  currentUser.phone=phone;
+  const ref=firebase.database().ref('users/'+currentUser.id);
+  ref.update({name,phone}).then(()=>{
+    msg.style.color='var(--green)';msg.textContent='✅ 저장됐습니다!';
+    setTimeout(()=>{msg.textContent='';},2500);
+  }).catch(()=>{msg.style.color='var(--red)';msg.textContent='저장 실패. 다시 시도해주세요.';});
 }
 
-function exportUsersExcel(){
-  const rows=users.filter(u=>u.role!=='master').map(u=>({
-    '아이디':u.id,
-    '이름':u.name,
-    '연락처':u.phone||'',
-    '상태':u.status==='active'?'활성':u.status==='pending'?'승인대기':'차단',
-    '매물수':(u.listings||[]).length,
-    '가입일':u.createdAt?new Date(u.createdAt).toLocaleDateString():'',
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'회원목록');
-  XLSX.writeFile(wb,`회원목록_${new Date().toISOString().slice(0,10)}.xlsx`);
+function saveProfilePw(){
+  const cur=document.getElementById('pf-pw-cur').value;
+  const nw=document.getElementById('pf-pw-new').value;
+  const nw2=document.getElementById('pf-pw-new2').value;
+  const msg=document.getElementById('pf-pw-msg');
+  if(!cur||!nw||!nw2){msg.style.color='var(--red)';msg.textContent='모든 항목을 입력해주세요.';return;}
+  if(cur!==currentUser.pw){msg.style.color='var(--red)';msg.textContent='현재 비밀번호가 틀렸습니다.';return;}
+  if(nw.length<6){msg.style.color='var(--red)';msg.textContent='새 비밀번호는 6자 이상이어야 합니다.';return;}
+  if(nw!==nw2){msg.style.color='var(--red)';msg.textContent='새 비밀번호가 일치하지 않습니다.';return;}
+  currentUser.pw=nw;
+  firebase.database().ref('users/'+currentUser.id+'/pw').set(nw).then(()=>{
+    msg.style.color='var(--green)';msg.textContent='✅ 비밀번호가 변경됐습니다!';
+    document.getElementById('pf-pw-cur').value='';
+    document.getElementById('pf-pw-new').value='';
+    document.getElementById('pf-pw-new2').value='';
+    setTimeout(()=>{msg.textContent='';},2500);
+  }).catch(()=>{msg.style.color='var(--red)';msg.textContent='변경 실패. 다시 시도해주세요.';});
 }
 
 // ════════════════════════════════════════════
