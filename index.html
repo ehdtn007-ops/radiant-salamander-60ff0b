@@ -914,7 +914,6 @@ select:hover,select:focus{border-color:var(--accent)}
       <div class="dpop-info-block" id="dp-info-block"></div>
       <!-- 담당자 -->
       <div class="dpop-agent-block" id="dp-agent"></div>
-      <div style="padding:0 14px 10px"><button onclick="openSharePopup()" style="width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔗 링크 복사하기</button></div>
       <div style="padding:10px 14px 14px">
         <div style="display:flex;gap:8px">
           <button id="dp-cafe-btn" onclick="copyCafePost(activePopupItem,this)" style="flex:1;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">카페 광고용 저장<br>(이미지)</button>
@@ -1544,14 +1543,16 @@ function showBoardDetail(item){
         </div>
         <!-- 담당자 -->
         <div class="dpop-agent-block">${agentCardHtml}</div>
-        <!-- 링크복사 + 버튼 -->
-        <div style="padding:0 18px 10px"><button onclick="openSharePopupFor(window._bdItem)" style="width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔗 링크 복사하기</button></div>
         <!-- 공유 + 지도에서 보기 버튼 -->
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;gap:8px">
             <button onclick="copyCafePost(window._bdItem,this)" style="flex:1;background:linear-gradient(135deg,#03c75a,#02a44e);border:none;color:#fff;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">카페 광고용 저장<br>(이미지)</button>
             <button onclick="copyCafeText(window._bdItem,this)" style="flex:1;background:linear-gradient(135deg,#4f8cff,#2563eb);border:none;color:#fff;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">고시원넷 광고용 저장<br>(텍스트)</button>
           </div>
+          <button onclick="openSharePopupFor(window._bdItem)"
+            style="width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            📋 링크 복사하기
+          </button>
           <button id="bd-map-btn"
             style="width:100%;background:rgba(79,140,255,.12);border:1px solid var(--accent);color:var(--accent);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">
             🗺️ 지도에서 위치 보기
@@ -2861,7 +2862,7 @@ function openSharePopupFor(item){
   document.getElementById('share-name').textContent=item.name;
   document.getElementById('share-url').textContent=url;
   const btn=document.getElementById('copy-btn');
-  if(btn){btn.textContent='📋 링크 복사하기';btn.style.background='';}
+  if(btn){btn.innerHTML='<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif">📋</span> 링크 복사하기';btn.style.background='';btn.style.color='';}
   show('ov-share');
 }
 function _doClipboard(url,btn){
