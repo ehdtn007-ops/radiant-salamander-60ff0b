@@ -165,13 +165,13 @@ select:hover,select:focus{border-color:var(--accent)}
 #kakao-map{width:100%;height:100%}
 
 /* ═══ 핀 스타일 ═══ */
-.cpin{position:relative;cursor:pointer;transform:translateY(-100%)}
+.cpin{position:relative;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center}.cpin-bub.gs~.cpin-dot,.cpin-bub.gs-r~.cpin-dot,.cpin-bub.mt~.cpin-dot,.cpin-bub.mt-r~.cpin-dot{display:none}
 .cpin-bub{font-size:18px;font-weight:800;padding:8px 15px;border-radius:22px;white-space:nowrap;position:relative;overflow:visible;transition:filter .15s,font-size .15s;box-shadow:0 4px 18px rgba(0,0,0,.45);text-align:center;line-height:1.6;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
 .cpin-bub .pin-tot{color:#ff4444;font-size:18px;font-weight:900;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;display:block}
 /* 핀 관련 불필요 CSS 정리 */
 .pin-price-line{font-size:12px;font-weight:700;display:block;line-height:1.45;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
 .pin-tot-line{font-size:11px;font-weight:900;color:#ff4444;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;display:block;line-height:1.3}
-.cpin-cluster{cursor:pointer;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.cpin-cluster{cursor:pointer;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));padding-bottom:10px}
 .cpin-cluster .cluster-bub{background:linear-gradient(135deg,#ff6b35,#f7c948);border-radius:50%;width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.35);transition:transform .15s}
 .cpin-cluster.active .cluster-bub,.cpin-cluster:hover .cluster-bub{transform:scale(1.15)}
 .cluster-cnt{font-size:22px;font-weight:900;color:#1a1d27;line-height:1}
@@ -184,7 +184,7 @@ select:hover,select:focus{border-color:var(--accent)}
 .cl-row{padding:6px 0}
 .cl-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;width:100%}
 .cl-btn:hover{opacity:.85}
-.cpin-bub::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom:none}
+.cpin-bub::after{display:none}
 /* 고시원 매매 — 진보라 */
 .cpin-bub.gs{background:#7c3aed;color:#f5e0ff}.cpin-bub.gs::after{border-top-color:#7c3aed}
 /* 고시원 월세 — 주황 */
@@ -215,9 +215,9 @@ select:hover,select:focus{border-color:var(--accent)}
 }
 
 /* ABC 핀 */
-.abc-pin{position:relative;cursor:pointer;transform:translateY(-100%);z-index:100}
+.abc-pin{position:relative;cursor:pointer;z-index:100;display:inline-block}
 .abc-bub{background:linear-gradient(135deg,#f5a623,#ffd700,#ffe87c,#ffd700,#f5a623);background-size:200% 200%;color:#3d2000;font-size:14px;font-weight:900;padding:10px 18px;border-radius:28px;white-space:nowrap;position:relative;box-shadow:0 0 8px 2px rgba(255,215,0,.7),0 0 18px 6px rgba(255,215,0,.4),0 4px 12px rgba(0,0,0,.3);animation:abcPulse 2s ease-in-out infinite;display:flex;align-items:center;gap:6px;border:2px solid rgba(255,255,200,.7)}
-.abc-bub::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);border:10px solid transparent;border-bottom:none;border-top-color:#ffd700}
+.abc-bub::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);border:10px solid transparent;border-bottom:none;border-top-color:#ffd700;pointer-events:none}
 @keyframes abcPulse{
   0%  {box-shadow:0 0 6px 2px rgba(255,215,0,.6),0 0 14px 5px rgba(255,215,0,.3);filter:brightness(1)}
   50% {box-shadow:0 0 14px 5px rgba(255,215,0,.8),0 0 28px 10px rgba(255,215,0,.45);filter:brightness(1.15)}
@@ -1216,30 +1216,26 @@ function updatePinFontSize(){
   const lv=kakaoMap.getLevel();
   const fs=getPinFontSize(lv);
   const fs2=Math.max(6, Math.round(fs*0.88));
-  // abc-bub 폰트 크기 먼저 적용
-  document.querySelectorAll('.abc-bub').forEach(el=>{ el.style.fontSize=fs+'px'; });
-  // 매물 핀은 abc-bub 실제 폰트 크기를 읽어서 동일하게
-  const abcEl=document.querySelector('.abc-bub');
-  const abcFs=abcEl?parseFloat(getComputedStyle(abcEl).fontSize)||fs:fs;
+  // abc-bub는 고정 폰트 (줌에 따라 변경 안 함 → 핀 위치 고정)
+  // 매물 핀만 동적으로 변경
   document.querySelectorAll('.cpin-bub').forEach(el=>{
-    el.style.fontSize=abcFs+'px';
-    el.querySelectorAll('.pin-price-line').forEach(e=>e.style.fontSize=abcFs+'px');
-    el.querySelectorAll('.pin-tot-line').forEach(e=>e.style.fontSize=abcFs+'px');
-    el.querySelectorAll('.pin-tot').forEach(e=>e.style.fontSize=abcFs+'px');
+    el.style.fontSize=fs+'px';
+    el.querySelectorAll('.pin-price-line').forEach(e=>e.style.fontSize=fs+'px');
+    el.querySelectorAll('.pin-tot-line').forEach(e=>e.style.fontSize=fs+'px');
+    el.querySelectorAll('.pin-tot').forEach(e=>e.style.fontSize=fs+'px');
     el.querySelectorAll('span[style*="opacity"]').forEach(e=>e.style.fontSize=fs2+'px');
-    el.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(abcFs*0.75))+'px');
-    el.querySelectorAll('.pin-gstype').forEach(e=>e.style.fontSize=Math.max(6,Math.round(abcFs*0.65))+'px');
+    el.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(fs*0.75))+'px');
+    el.querySelectorAll('.pin-gstype').forEach(e=>e.style.fontSize=Math.max(6,Math.round(fs*0.65))+'px');
   });
 }
 function placeABCPin(){
   if(!geocoderObj)return;
   geocoderObj.addressSearch('서울특별시 중구 을지로9길 8',function(res,stat){
-    let lat=37.5663,lng=126.9997;
-    if(stat===kakao.maps.services.Status.OK){lat=parseFloat(res[0].y);lng=parseFloat(res[0].x);}
+    const lat=37.56664537012906, lng=126.98846590861766;
     new kakao.maps.CustomOverlay({
       position:new kakao.maps.LatLng(lat,lng),
-      content:`<div class="abc-pin" onclick="showABCPopup()"><div class="abc-bub"><span>🏢</span>첫번째공인중개사사무소</div></div>`,
-      yAnchor:1,zIndex:50
+      content:`<div style="display:inline-flex;flex-direction:column;align-items:center;padding-bottom:10px"><div class="abc-pin" onclick="showABCPopup()"><div class="abc-bub"><span>🏢</span>첫번째공인중개사사무소</div></div></div>`,
+      xAnchor:0.5,yAnchor:1,zIndex:50
     }).setMap(kakaoMap);
   });
 }
@@ -1747,8 +1743,9 @@ function renderPins(coordMap){
       const item=items[0];
       const pc=pinClass(item),lbl=pinLbl(item);
       const tagHtml=pinTypeTag(item);
-      const content=`<div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:visible;background:transparent"><div class="cpin-bub ${pc}" style="position:relative;overflow:visible">${tagHtml}${lbl}</div></div>`;
-      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:activeId===item.lid?20:10});
+      const dotColor=pc==='gs'?'rgba(124,58,237,0.5)':pc==='gs-r'?'rgba(217,119,6,0.5)':pc==='mt'?'rgba(29,78,216,0.5)':'rgba(8,145,178,0.5)';
+      const content=`<div style="display:inline-flex;flex-direction:column;align-items:center;text-align:center"><div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:visible;background:transparent;display:inline-block"><div class="cpin-bub ${pc}" style="position:relative;overflow:visible">${tagHtml}${lbl}</div></div><div style="width:80px;height:32px;border-radius:50%;background:${dotColor};box-shadow:0 0 48px 24px ${dotColor};margin-top:1px;pointer-events:none"></div></div>`;
+      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,xAnchor:0.5,yAnchor:1,zIndex:activeId===item.lid?20:10});
       ov.setMap(kakaoMap);overlays.push(ov);
       setTimeout(()=>{
         const el=document.getElementById('pin-'+item.lid);
@@ -1776,13 +1773,13 @@ function renderPins(coordMap){
       // 클러스터 핀
       const clKey='cl_'+lat.toFixed(4)+'_'+lng.toFixed(4);
       const hasActive=items.some(i=>i.lid===activeId);
-      const content=`<div class="cpin-cluster${hasActive?' active':''}" id="${clKey}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation">
+      const content=`<div style="display:inline-block"><div class="cpin-cluster${hasActive?' active':''}" id="${clKey}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:inline-block">
         <div class="cluster-bub">
           <div class="cluster-cnt">${items.length}</div>
           <div class="cluster-label">매물</div>
         </div>
-      </div>`;
-      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,yAnchor:1,zIndex:hasActive?20:15});
+      </div></div>`;
+      const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,xAnchor:0.5,yAnchor:1,zIndex:hasActive?20:15});
       ov.setMap(kakaoMap);overlays.push(ov);
       setTimeout(()=>{
         const el=document.getElementById(clKey);
