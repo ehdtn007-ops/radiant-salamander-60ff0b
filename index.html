@@ -594,7 +594,11 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">면적 (㎡)</label><input class="fi" id="larea2" type="number" placeholder="예: 165.5"></div>
-      <div class="fg"><label class="fl">해당 층수</label><input class="fi" id="lfloor" type="number" placeholder="예: 3"></div>
+      <div class="fg">
+        <label class="fl">해당 층수</label>
+        <input class="fi" id="lfloor" type="text" placeholder="예: 3 또는 3-5">
+        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식으로 입력 (건축물대장 면적 자동 합산)</div>
+      </div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">총 층수</label><input class="fi" id="ltotalfloor" type="number" placeholder="예: 5"></div>
@@ -642,11 +646,13 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="atabs">
       <div class="atab active" onclick="atab('members')">👥 회원 관리 <span id="pending-cnt-badge" style="font-size:10px;color:var(--yellow)"></span></div>
       <div class="atab" onclick="atab('listings')">🏠 매물 관리</div>
+      <div class="atab" onclick="atab('archived')">📦 지난매물</div>
       <div class="atab" onclick="atab('stats')">📊 통계</div>
       <div class="atab" onclick="atab('profile')">👤 내 정보 변경</div>
     </div>
     <div class="asec active" id="as-members"></div>
     <div class="asec" id="as-listings"></div>
+    <div class="asec" id="as-archived"></div>
     <div class="asec" id="as-stats"></div>
     <div class="asec" id="as-profile"></div>
   </div>
@@ -741,7 +747,11 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">면적 (㎡)</label><input class="fi" id="elarea2" type="number"></div>
-      <div class="fg"><label class="fl">해당 층수</label><input class="fi" id="elfloor" type="number"></div>
+      <div class="fg">
+        <label class="fl">해당 층수</label>
+        <input class="fi" id="elfloor" type="text" placeholder="예: 3 또는 3-5">
+        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식으로 입력</div>
+      </div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">총 층수</label><input class="fi" id="eltotalfloor" type="number"></div>
@@ -1502,7 +1512,7 @@ function showBoardDetail(item){
   priceHtml+=`<div class="rooms-row">
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
-    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
+    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val" style="font-size:${String(item.floor||'-').length>3?'13px':'17px'}">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
   </div>`;
 
   // 담당자 정보
@@ -2009,7 +2019,7 @@ function showPopup(item){
   priceHtml+=`<div class="rooms-row">
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
-    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
+    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val" style="font-size:${String(item.floor||'-').length>3?'13px':'17px'}">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
   </div>`;
   document.getElementById('dp-price-block').innerHTML=priceHtml;
 
@@ -2042,7 +2052,7 @@ function showPopup(item){
       <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${maskAddr(item)}</div></div>
     </div>`;
 
-  // ── 담당자 칸 (전화 아이콘 + 전체 클릭 링크) ──
+  // ── 담당자 칸
   const ag=document.getElementById('dp-agent');
   if(item.ownerId){
     const owner=users.find(u=>u.id===item.ownerId);
@@ -2252,7 +2262,7 @@ function doAddListing(){
     rooms:parseInt(document.getElementById('lrooms').value)||0,
     baths:parseInt(document.getElementById('lbaths').value)||0,
     area2:parseFloat(document.getElementById('larea2').value)||0,
-    floor:parseInt(document.getElementById('lfloor').value)||1,
+    floor:document.getElementById('lfloor').value.trim()||'1',
     totalfloor:parseInt(document.getElementById('ltotalfloor').value)||0,
     direction:document.getElementById('ldirection').value||'',
     parking:parseInt(document.getElementById('lparking').value)||0,
@@ -2276,11 +2286,12 @@ function doAddListing(){
 // ════════════════════════════════════════════
 function openAdmin(){if(!currentUser||currentUser.role!=='master')return;show('ov-admin');renderAMembers();}
 function atab(t){
-  const tabs=['members','listings','stats','profile'];
+  const tabs=['members','listings','archived','stats','profile'];
   document.querySelectorAll('.atab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   document.querySelectorAll('.asec').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   if(t==='members') renderAMembers();
   else if(t==='listings') renderAListings();
+  else if(t==='archived') renderAArchived();
   else if(t==='stats') renderStats();
   else if(t==='profile') renderProfilePanel();
 }
@@ -2343,6 +2354,7 @@ function renderAListings(){
     <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
     <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
+      <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3);font-weight:700" onclick="bulkArchive()">📦 선택 지난매물로</button>
       <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;border:1px solid var(--border2);border-radius:7px;padding:4px 9px;white-space:nowrap">
         <input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px">
@@ -2404,6 +2416,7 @@ function renderAListings(){
         <td style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="openEditListingAdmin('${item.ownerId||''}','${item.lid}')">✏️수정</button>
           <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="refreshRegisteredAt('${item.ownerId||''}','${item.lid}',this)" title="오늘 날짜로 등록일 갱신">📅오늘</button>
+          <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3)" onclick="archiveListing('${item.ownerId||''}','${item.lid}')">📦지난매물</button>
           ${item.ownerId
             ?`<button class="btn btn-sm btn-red" onclick="delListing('${item.ownerId}','${item.lid}')">삭제</button>`
             :`<button class="btn btn-sm btn-red" onclick="delBaseListing('${item.lid}')">삭제</button>`}
@@ -2444,6 +2457,116 @@ function bulkDelete(){
     }
   });
   renderAListings();render();
+}
+
+// ════════════════════════════════════════════
+// 지난매물 아카이브
+// ════════════════════════════════════════════
+// archivedListings: [{...listing, ownerId, ownerName, archivedAt}]
+let archivedListings = [];
+try{archivedListings=JSON.parse(localStorage.getItem('archivedListings')||'[]');}catch(e){}
+
+function archiveListing(ownerId, lid){
+  if(!confirm('이 매물을 지난매물로 이동하시겠습니까?'))return;
+  _doArchive(ownerId, lid);
+  renderAListings(); render();
+}
+
+function _doArchive(ownerId, lid){
+  let item = null;
+  if(ownerId){
+    const u=users.find(u=>u.id===ownerId);
+    if(u&&u.listings){
+      const idx=u.listings.findIndex(l=>l.lid===lid);
+      if(idx>=0){item={...u.listings[idx],ownerId,ownerName:u.name};u.listings.splice(idx,1);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+    }
+  } else {
+    const idx=BASE.findIndex(b=>b.lid===lid);
+    if(idx>=0){item={...BASE[idx],ownerId:null,ownerName:'기본'};BASE.splice(idx,1);db.collection('base_hidden').doc(lid).set({deleted:true}).catch(e=>{});}
+  }
+  if(item){
+    item.archivedAt=Date.now();
+    archivedListings.push(item);
+    try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
+  }
+}
+
+function bulkArchive(){
+  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
+  if(!items.length){alert('선택된 매물이 없습니다.');return;}
+  if(!confirm(`선택한 ${items.length}건을 지난매물로 이동할까요?`))return;
+  items.forEach(({lid,ownerId})=>_doArchive(ownerId,lid));
+  renderAListings();render();
+}
+
+function renderAArchived(){
+  const el=document.getElementById('as-archived');
+  try{const saved=localStorage.getItem('archivedListings');if(saved)archivedListings=JSON.parse(saved);}catch(e){}
+  if(!archivedListings.length){
+    el.innerHTML='<div style="color:var(--text2);padding:40px;text-align:center;font-size:14px">📦 지난매물이 없습니다</div>';
+    return;
+  }
+  const sorted=[...archivedListings].sort((a,b)=>(b.archivedAt||0)-(a.archivedAt||0));
+  el.innerHTML=`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;color:var(--text2)">지난매물 <b style="color:var(--purple)">${sorted.length}건</b></div>
+    <button class="btn btn-sm btn-red" onclick="clearAllArchived()">🗑 전체 삭제</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="atable" style="min-width:700px">
+    <thead><tr>
+      <th>담당자</th><th>종류</th><th>매물명</th><th>위치</th><th>가격</th><th>이동일</th><th>관리</th>
+    </tr></thead>
+    <tbody>${sorted.map(item=>{
+      const d=item.archivedAt?new Date(item.archivedAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
+      return `<tr>
+        <td style="font-size:11px;font-weight:700;color:var(--purple)">${item.ownerName||'기본'}</td>
+        <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
+        <td style="font-weight:600;font-size:12px">${item.name}</td>
+        <td style="color:var(--text2);font-size:11px">${maskAddr(item)}</td>
+        <td style="font-size:11px">${fmtPrice(item)}</td>
+        <td style="font-size:11px;color:var(--text2)">${d}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-green" onclick="restoreArchived('${item.lid}')">↩️ 복원</button>
+          <button class="btn btn-sm btn-red" onclick="deleteArchived('${item.lid}')">삭제</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function restoreArchived(lid){
+  const idx=archivedListings.findIndex(l=>l.lid===lid);
+  if(idx<0)return;
+  const item={...archivedListings[idx]};
+  const ownerId=item.ownerId;
+  delete item.archivedAt;
+  if(ownerId){
+    const u=users.find(u=>u.id===ownerId);
+    if(u){if(!u.listings)u.listings=[];u.listings.push(item);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+  } else {
+    delete item.ownerId;delete item.ownerName;
+    BASE.push(item);
+    db.collection('base_hidden').doc(lid).delete().catch(e=>{});
+  }
+  archivedListings.splice(idx,1);
+  try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
+  renderAArchived();render();
+  alert('매물이 복원되었습니다!');
+}
+
+function deleteArchived(lid){
+  if(!confirm('지난매물에서 완전히 삭제하시겠습니까?'))return;
+  archivedListings=archivedListings.filter(l=>l.lid!==lid);
+  try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
+  renderAArchived();
+}
+
+function clearAllArchived(){
+  if(!confirm(`지난매물 ${archivedListings.length}건을 모두 완전 삭제할까요? 되돌릴 수 없습니다.`))return;
+  archivedListings=[];
+  try{localStorage.setItem('archivedListings','[]');}catch(e){}
+  renderAArchived();
 }
 function toggleListingHidden(ownerId,lid){
   if(ownerId){
@@ -2674,7 +2797,7 @@ async function fetchBldgInfo(prefix='el'){
     // 4단계: 폼 자동입력
     if(d.grndFlrCnt)set(p+'totalfloor',parseInt(d.grndFlrCnt)||'');
     // 집합건물 호별 층수
-    if(d.grndFlrCnt_ho)set(p+'floor',parseInt(d.grndFlrCnt_ho)||'');
+    if(d.grndFlrCnt_ho)set(p+'floor',d.grndFlrCnt_ho);
 
     {
       const parking=(parseInt(d.indrMechUtcnt)||0)+(parseInt(d.indrAutoUtcnt)||0)
@@ -2685,16 +2808,54 @@ async function fetchBldgInfo(prefix='el'){
       set(p+'year',d.useAprDay.substring(0,4));
       set(p+'approvedate',`${d.useAprDay.substring(0,4)}-${d.useAprDay.substring(4,6)}-${d.useAprDay.substring(6,8)}`);
     }
-    if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
+
+    // 층수 입력값 파싱 (3-5 형식 지원)
+    const floorInput=(document.getElementById(p+'floor')?.value||'').trim();
+    let floorArea = null;
+    const floorMatch = floorInput.match(/^(\d+)-(\d+)$/);
+    if(floorMatch){
+      // 복수 층: 층별 면적 API 조회 후 합산
+      const startFloor=parseInt(floorMatch[1]);
+      const endFloor=parseInt(floorMatch[2]);
+      const floorNums=[];
+      for(let f=startFloor;f<=endFloor;f++)floorNums.push(f);
+      const baseUrl2=`https://apis.data.go.kr/1613000/BldRgstHubService`;
+      const commonParam2=`?serviceKey=${encodeURIComponent(apiKey)}&sigunguCd=${sigunguCd}&bjdongCd=${bjdongCd}&bun=${bun}&ji=${ji}&numOfRows=30&pageNo=1&_type=json`;
+      try{
+        const resF=await fetch(baseUrl2+'/getBrFlrOulnInfo'+commonParam2);
+        const jsonF=await resF.json();
+        const flrItems=jsonF?.response?.body?.items?.item;
+        const flrList=Array.isArray(flrItems)?flrItems:(flrItems?[flrItems]:[]);
+        // 층번호 매칭 후 면적 합산
+        let sumArea=0;
+        floorNums.forEach(fn=>{
+          const matched=flrList.filter(fi=>parseInt(fi.flrNo)===fn||fi.flrNoNm===(fn+'층'));
+          matched.forEach(fi=>{sumArea+=parseFloat(fi.area||fi.atchArea||0);});
+        });
+        if(sumArea>0){
+          floorArea=Math.round(sumArea);
+          set(p+'area2',floorArea);
+          resultEl.innerHTML+=' &nbsp;|&nbsp; <span style="color:var(--green)">🏢 '+startFloor+'~'+endFloor+'층 면적 합산: '+floorArea+'㎡</span>';
+        } else if(d.totArea){
+          set(p+'area2',Math.round(parseFloat(d.totArea)));
+        }
+      }catch(e2){
+        if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
+      }
+    } else {
+      if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
+    }
+
     if(d.vlawBldYn==='Y'){const el=document.getElementById(p+'illegal');if(el)el.value='위반건축물';}
 
     const parking2=(parseInt(d.indrMechUtcnt||0)+parseInt(d.indrAutoUtcnt||0)
                    +parseInt(d.oudrMechUtcnt||0)+parseInt(d.oudrAutoUtcnt||0));
+    const displayArea=floorArea!=null?floorArea+'㎡ (층별합산)': (d.totArea?Math.round(d.totArea)+'㎡':'-');
     const rows=[
       ['구분', isApt?'🏢 집합건물':'🏠 일반건축물'],
       ['건물명',d.bldNm||'-'],
       ['주용도',d.mainPurpsCdNm||'-'],
-      ['연면적',d.totArea?Math.round(d.totArea)+'㎡':'-'],
+      ['연면적',displayArea],
       ['총층수',d.grndFlrCnt?d.grndFlrCnt+'층':'-'],
       ['사용승인일',d.useAprDay&&d.useAprDay.length>=8
         ?`${d.useAprDay.substring(0,4)}-${d.useAprDay.substring(4,6)}-${d.useAprDay.substring(6,8)}`:'-'],
@@ -2755,7 +2916,7 @@ function openEditListing(){
   set('elrooms',item.rooms||0);
   set('elbaths',item.baths||0);
   set('elarea2',item.area2||0);
-  set('elfloor',item.floor||1);
+  set('elfloor',item.floor||'1');
   set('eltotalfloor',item.totalfloor||0);
   set('eldirection',item.direction||'');
   set('elparking',item.parking||0);
@@ -2826,7 +2987,7 @@ function doEditListing(){
     rooms:parseInt(document.getElementById('elrooms').value)||0,
     baths:parseInt(document.getElementById('elbaths').value)||0,
     area2:parseFloat(document.getElementById('elarea2').value)||0,
-    floor:parseInt(document.getElementById('elfloor').value)||1,
+    floor:document.getElementById('elfloor').value.trim()||'1',
     totalfloor:parseInt(document.getElementById('eltotalfloor').value)||0,
     direction:document.getElementById('eldirection').value||'',
     parking:parseInt(document.getElementById('elparking').value)||0,
