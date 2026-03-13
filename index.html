@@ -635,6 +635,10 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="fsec">📝 매물 특징 설명</div>
     <div class="fg"><label class="fl">자유 서술 (특징, 장점, 주변환경 등)</label>
       <textarea class="fi" id="ldesc" style="min-height:100px" placeholder="예: 강남역 도보 3분 거리의 역세권 고시원입니다. 전 객실 에어컨/냉장고 풀옵션, 현재 만실 운영중이며 수익률 약 8% 수준입니다. 리모델링 2022년 완료로 내부 깔끔합니다."></textarea>
+    <div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,.06);border:1.5px dashed rgba(251,191,36,.3);border-radius:10px">
+      <label class="fl" style="color:#fbbf24;font-size:11px;font-weight:700;margin-bottom:6px">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2);margin-left:6px">로그인한 직원만 볼 수 있는 내부 메모입니다. 고객에게 노출되지 않습니다.</span></label>
+      <textarea class="fi" id="lmemo" style="min-height:60px;background:rgba(251,191,36,.04);border-color:rgba(251,191,36,.2)" placeholder="예: 건물주 연락처, 특이사항, 협상 여지 등 내부 메모..."></textarea>
+    </div>
       <div style="display:flex;gap:6px;margin-top:6px">
         <button type="button" id="lbtn-ai" class="btn btn-sm" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:700;display:flex;align-items:center;gap:5px" onclick="genAdCopy('l')">
           ✨ AI 광고문구 생성
@@ -877,6 +881,10 @@ select:hover,select:focus{border-color:var(--accent)}
         </button>
         <span id="elbtn-ai-status" style="font-size:11px;color:var(--text2);align-self:center"></span>
       </div>
+    </div>
+    <div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,.06);border:1.5px dashed rgba(251,191,36,.3);border-radius:10px">
+      <label class="fl" style="color:#fbbf24;font-size:11px;font-weight:700;margin-bottom:6px">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2);margin-left:6px">로그인한 직원만 볼 수 있는 내부 메모입니다. 고객에게 노출되지 않습니다.</span></label>
+      <textarea class="fi" id="elmemo" style="min-height:60px;background:rgba(251,191,36,.04);border-color:rgba(251,191,36,.2)" placeholder="예: 건물주 연락처, 특이사항, 협상 여지 등 내부 메모..."></textarea>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn" style="flex:1" onclick="closeEditListing()">취소</button>
@@ -2109,31 +2117,7 @@ function showPopup(item){
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
   </div>`;
-  // ── 수익률 계산 ──
-  let yieldHtml='';
-  {
-    const isRentYield=item.deal==='월세';
-    const annualRev=isRentYield
-      ?((item.monthly||0)+(item.maintenance||0))*12  // 임대: (월세+관리비)×12
-      :(item.monthly||0)*12;                          // 혹시 매매에 임대수입 있는 경우
-    const investBase=isRentYield
-      ?(item.deposit||0)+(item.keymoney||0)           // 임대: 보증금+권리금
-      :(item.price||0)+(item.keymoney||0);            // 매매: 매매가+권리금
-    if(investBase>0&&annualRev>0){
-      const yRate=(annualRev/investBase*100).toFixed(1);
-      const yColor=parseFloat(yRate)>=10?'#3ecf8e':parseFloat(yRate)>=7?'#ffb300':'#f87171';
-      const yLabel=isRentYield?'수익률 (연 / 보증금+권리금 기준)':'수익률 (연 / 투자금 기준)';
-      yieldHtml=`
-      <div style="margin-top:10px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,rgba(62,207,142,.1),rgba(79,140,255,.08));border:1.5px solid rgba(62,207,142,.2);display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:10px;color:var(--text2);font-weight:600;letter-spacing:.5px">📈 ${yLabel}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">연수입 ${won(annualRev)} ÷ 투자금 ${won(investBase)}</div>
-        </div>
-        <div style="font-size:26px;font-weight:900;color:${yColor}">${yRate}<span style="font-size:14px">%</span></div>
-      </div>`;
-    }
-  }
-  priceHtml+=yieldHtml;
+
   document.getElementById('dp-price-block').innerHTML=priceHtml;
 
   // ── 특징 설명 ──
@@ -2393,6 +2377,7 @@ function doAddListing(){
     approvedate:document.getElementById('lapprovedate').value||'',
     illegal:document.getElementById('lillegal').value||'해당없음',
     desc:document.getElementById('ldesc').value.trim()||'',
+    memo:document.getElementById('lmemo').value.trim()||'',
   };
   const u=users.find(u=>u.id===currentUser.id);
   if(!u.listings)u.listings=[];
@@ -2708,7 +2693,10 @@ function renderAListings(){
         <td style="font-size:11px;font-weight:700;color:var(--accent)">${item.ownerName||'기본'}</td>
         <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
         <td><span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span></td>
-        <td style="font-weight:600;font-size:12px">${item.name}</td>
+        <td>
+          <div style="font-weight:600;font-size:12px">${item.name}</div>
+          ${item.memo?`<div style="margin-top:4px;padding:4px 8px;background:rgba(251,191,36,.08);border-left:2px solid rgba(251,191,36,.5);border-radius:0 6px 6px 0;font-size:10px;color:#fbbf24;line-height:1.5;white-space:pre-wrap;word-break:break-all">🔒 ${item.memo}</div>`:''}
+        </td>
         <td style="color:var(--text2);font-size:11px">${maskAddr(item)}</td>
         <td style="font-size:11px">${fmtPrice(item)}</td>
         <td style="font-size:11px;color:var(--text2)">${regDate}</td>
@@ -2918,8 +2906,7 @@ function drawListingTable(canvas, items){
     addr: {x:282, w:200},
     deal: {x:490, w:48},
     price:{x:546, w:268},
-    size: {x:822, w:96},
-    rate: {x:926, w:74},
+    size: {x:822, w:178},
   };
   const colHeaders=[
     ['No.',    C.no,   'center'],
@@ -2929,7 +2916,6 @@ function drawListingTable(canvas, items){
     ['거래',   C.deal, 'center'],
     ['가격',   C.price,'left'],
     ['규모',   C.size, 'left'],
-    ['수익률', C.rate, 'center'],
   ];
   ctx.fillStyle='rgba(180,200,255,.6)'; ctx.font='bold 11px sans-serif';
   colHeaders.forEach(([label,col,align])=>{
@@ -3038,19 +3024,7 @@ function drawListingTable(canvas, items){
       ctx.fillText(item.year+'년 준공',C.size.x,cy+10);
     }
 
-    // ⑧ 수익률
-    const annualRev=isRent?((item.monthly||0)+(item.maintenance||0))*12:0;
-    const invBase=isRent?(item.deposit||0)+km:(item.price||0)+km;
-    if(invBase>0&&annualRev>0){
-      const yr=(annualRev/invBase*100).toFixed(1);
-      const yc=parseFloat(yr)>=10?'#34d399':parseFloat(yr)>=7?'#fbbf24':'#f87171';
-      ctx.fillStyle=yc+'22'; imgRoundRect(ctx,C.rate.x,cy-18,C.rate.w,34,6,true);
-      ctx.fillStyle=yc; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
-      ctx.fillText(yr+'%',C.rate.x+C.rate.w/2,cy+6);
-    } else {
-      ctx.fillStyle='rgba(150,165,200,.3)'; ctx.font='12px sans-serif'; ctx.textAlign='center';
-      ctx.fillText('-',C.rate.x+C.rate.w/2,cy+5);
-    }
+
   });
 
   // 푸터
@@ -3626,6 +3600,7 @@ function openEditListing(){
   set('elmovein',item.movein||'');
   set('elillegal',item.illegal||'해당없음');
   set('eldesc',item.desc||'');
+  set('elmemo',item.memo||'');
   set('elbldgdong',item.bldgdong||'');
   set('elhosu',item.hosu||'');
   // 집합건물 여부 복원
@@ -3698,6 +3673,7 @@ function doEditListing(){
     approvedate:document.getElementById('elapprovedate').value||'',
     illegal:document.getElementById('elillegal').value||'해당없음',
     desc:document.getElementById('eldesc').value.trim()||'',
+    memo:document.getElementById('elmemo').value.trim()||'',
   };
 
   if(ownerId){
