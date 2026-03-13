@@ -3725,6 +3725,21 @@ function doEditListing(){
     if(mapWrap){mapWrap.style.flex='';mapWrap.style.height='';}
   }
   render();
+  // 팝업이 열려있던 매물이면 activePopupItem 갱신 후 재표시
+  if(activePopupItem&&activePopupItem.lid===lid){
+    // 업데이트된 item 찾기
+    let refreshed=null;
+    if(ownerId){
+      const u=users.find(u=>u.id===ownerId);
+      if(u&&u.listings)refreshed=u.listings.find(l=>l.lid===lid);
+    } else {
+      refreshed=BASE.find(b=>b.lid===lid);
+    }
+    if(refreshed){
+      activePopupItem={...refreshed,ownerId:ownerId||null};
+      showPopup(activePopupItem);
+    }
+  }
   alert('매물이 수정되었습니다!');
 }
 
