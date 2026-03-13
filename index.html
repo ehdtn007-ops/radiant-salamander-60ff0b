@@ -1024,6 +1024,11 @@ select:hover,select:focus{border-color:var(--accent)}
         <div class="dpop-desc-title">✏️ 매물 특징</div>
         <div class="dpop-desc-text" id="dp-desc"></div>
       </div>
+      <!-- 비밀 메모 (로그인 회원만) -->
+      <div id="dp-memo-block" style="display:none;padding:12px 18px;border-bottom:1px solid rgba(251,191,36,.2);background:rgba(251,191,36,.04)">
+        <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.5px;margin-bottom:6px">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2)">(직원 공개)</span></div>
+        <div id="dp-memo-text" style="font-size:13px;color:#fde68a;line-height:1.75;white-space:pre-wrap;word-break:break-word;padding:10px 12px;background:rgba(251,191,36,.06);border:1px dashed rgba(251,191,36,.3);border-radius:8px"></div>
+      </div>
       <!-- 상세 정보 -->
       <div class="dpop-info-block" id="dp-info-block"></div>
       <!-- 담당자 -->
@@ -1396,6 +1401,7 @@ function showABCPopup(){
   document.getElementById('dp-addr').innerHTML='📍 서울특별시 중구 을지로9길 8 7층';
   document.getElementById('dp-price-block').innerHTML=`<div style="text-align:center;padding:8px 0"><a href="tel:02-6404-5455" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1));border:1.5px solid rgba(255,100,0,.5);border-radius:14px;padding:12px 28px;text-decoration:none;color:#ff8c00;font-size:15px;font-weight:800;transition:all .2s" onmouseover="this.style.background='linear-gradient(135deg,rgba(255,100,0,.3),rgba(255,140,0,.2))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(255,100,0,.18),rgba(255,140,0,.1))'">📞 방문 상담 환영 &nbsp;|&nbsp; 02-6404-5455</a></div>`;
   document.getElementById('dp-desc-block').style.display='none';
+  const _mb=document.getElementById('dp-memo-block');if(_mb)_mb.style.display='none';
   document.getElementById('dp-info-block').innerHTML=`<div class="dpop-info-title">📋 사무소 정보</div>
     <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;padding:4px 0">
       <div style="display:flex;gap:8px"><span style="color:var(--text2);min-width:70px;flex-shrink:0">중개업체명</span><span style="color:var(--text);font-weight:600">첫번째공인중개사사무소</span></div>
@@ -1620,7 +1626,7 @@ function showBoardDetail(item){
         <div class="price-cell highlight full"><div class="price-label">보증금+권리금 합계</div><div class="price-val" style="color:var(--red)">${won(tot)}</div></div>
       </div>`;
   } else {
-    priceHtml=`<div class="price-grid"><div class="price-cell"><div class="price-label">매매가</div><div class="price-val">${won(item.price||0)}</div></div><div class="price-cell"><div class="price-label">관리비 (월)</div><div class="price-val">${item.maintenance?won(item.maintenance):'-'}</div></div>${item.keymoney?`<div class="price-cell"><div class="price-label">권리금</div><div class="price-val">${won(item.keymoney)}</div></div>`:''}</div>`;
+    priceHtml=`<div class="price-grid" style="grid-template-columns:1fr"><div class="price-cell full highlight" style="text-align:center;padding:18px"><div class="price-label">매매가</div><div class="price-val accent" style="font-size:28px;font-weight:900;margin-top:4px">${won(item.price||0)}</div></div></div>`;
   }
   priceHtml+=`<div class="rooms-row">
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
@@ -1663,6 +1669,12 @@ function showBoardDetail(item){
         ${item.desc&&item.desc.trim()
           ?`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text">${item.desc}</div></div>`
           :`<div class="dpop-desc-block" style="display:block"><div class="dpop-desc-title">✏️ 매물 특징</div><div class="dpop-desc-text" style="color:var(--text3)">등록된 특징 설명이 없습니다.</div></div>`}
+        ${currentUser&&item.memo&&item.memo.trim()
+          ?`<div class="dpop-desc-block" style="display:block;background:rgba(251,191,36,.04);border-bottom:1px solid rgba(251,191,36,.2)">
+              <div class="dpop-desc-title" style="color:#fbbf24">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2)">(직원 공개)</span></div>
+              <div class="dpop-desc-text" style="color:#fde68a;padding:8px 10px;background:rgba(251,191,36,.06);border:1px dashed rgba(251,191,36,.3);border-radius:8px">${item.memo}</div>
+            </div>`
+          :''}
         <!-- 상세 정보 -->
         <div class="dpop-info-block">
           <div class="dpop-info-title">📋 중개대상물 표시 정보</div>
@@ -2132,22 +2144,16 @@ function showPopup(item){
     descEl.style.color='var(--text3)';
   }
   // ── 비밀 메모 (로그인 회원만) ──
-  const memoBlockId='dp-memo-block';
-  let memoBlock=document.getElementById(memoBlockId);
-  if(!memoBlock){
-    memoBlock=document.createElement('div');
-    memoBlock.id=memoBlockId;
-    descBlock.parentNode.insertBefore(memoBlock,descBlock.nextSibling);
-  }
-  if(currentUser&&item.memo&&item.memo.trim()){
-    memoBlock.style.display='block';
-    memoBlock.innerHTML=`<div style="padding:12px 18px;border-bottom:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.5px;margin-bottom:6px">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2)">(직원 공개)</span></div>
-      <div style="font-size:13px;color:#fde68a;line-height:1.75;white-space:pre-wrap;word-break:break-word;padding:10px 12px;background:rgba(251,191,36,.06);border:1px dashed rgba(251,191,36,.3);border-radius:8px">${item.memo}</div>
-    </div>`;
-  } else {
-    memoBlock.style.display='none';
-    memoBlock.innerHTML='';
+  const memoBlock=document.getElementById('dp-memo-block');
+  const memoText=document.getElementById('dp-memo-text');
+  if(memoBlock&&memoText){
+    if(currentUser&&item.memo&&item.memo.trim()){
+      memoText.textContent=item.memo;
+      memoBlock.style.display='block';
+    } else {
+      memoBlock.style.display='none';
+      memoText.textContent='';
+    }
   }
 
   // ── 상세 정보 ──
