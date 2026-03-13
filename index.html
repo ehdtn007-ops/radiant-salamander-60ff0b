@@ -656,8 +656,8 @@ select:hover,select:focus{border-color:var(--accent)}
     <button class="modal-close" onclick="closeAll()">✕</button>
     <div class="modal-title">📋 전체 매물 목록</div>
     <div class="modal-sub">매물을 선택한 뒤 안내 이미지를 생성하세요</div>
-    <div id="al-filters" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-      <select id="al-type" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="renderAllListings()">
+    <div id="al-filters" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+      <select id="al-type" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="alTypeChange()">
         <option value="">전체 종류</option>
         <option value="고시원">고시원</option>
         <option value="모텔">모텔</option>
@@ -667,11 +667,53 @@ select:hover,select:focus{border-color:var(--accent)}
         <option value="매매">매매</option>
         <option value="월세">월세</option>
       </select>
-      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;margin-left:auto;border:1px solid var(--border2);border-radius:7px;padding:4px 10px">
+      <div id="al-gstype-wrap" style="display:none;align-items:center;gap:4px;border:1px solid var(--border2);border-radius:8px;padding:4px 8px">
+        <span style="font-size:11px;color:var(--text2);margin-right:2px">유형</span>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text);cursor:pointer;white-space:nowrap"><input type="checkbox" id="al-gs-all" checked style="accent-color:var(--accent);width:12px;height:12px" onchange="alGsAllChange()">전체</label>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text);cursor:pointer;white-space:nowrap"><input type="checkbox" id="al-gs-1" value="올원룸" style="accent-color:var(--accent);width:12px;height:12px" onchange="alGsCbChange()">올원룸</label>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text);cursor:pointer;white-space:nowrap"><input type="checkbox" id="al-gs-2" value="혼합" style="accent-color:var(--accent);width:12px;height:12px" onchange="alGsCbChange()">혼합</label>
+        <label style="display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text);cursor:pointer;white-space:nowrap"><input type="checkbox" id="al-gs-3" value="올미니" style="accent-color:var(--accent);width:12px;height:12px" onchange="alGsCbChange()">올미니</label>
+      </div>
+      <select id="al-period" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="renderAllListings()">
+        <option value="">전체 기간</option>
+        <option value="7">최근 1주일</option>
+        <option value="15">최근 15일</option>
+        <option value="30">최근 1달</option>
+        <option value="90">최근 3달</option>
+        <option value="180">최근 6달</option>
+      </select>
+      <select id="al-prov" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="renderAllListings()">
+        <option value="">전체 시/도</option>
+        <option>서울</option><option>경기</option><option>인천</option>
+        <option>부산</option><option>대구</option><option>광주</option>
+        <option>대전</option><option>울산</option><option>세종</option>
+        <option>강원</option><option>충북</option><option>충남</option>
+        <option>전북</option><option>전남</option><option>경북</option>
+        <option>경남</option><option>제주</option>
+      </select>
+      <input id="al-search" class="fi" placeholder="매물명·구·동 검색" style="width:130px;padding:5px 10px;font-size:12px" oninput="renderAllListings()">
+      <select id="al-price" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="renderAllListings()">
+        <option value="">전체 금액</option>
+        <option value="1">1억↓</option>
+        <option value="2">2억↓</option>
+        <option value="3">3억↓</option>
+        <option value="5">5억↓</option>
+        <option value="10">10억↓</option>
+        <option value="30">30억↓</option>
+      </select>
+      <select id="al-rooms" class="fi" style="width:auto;padding:5px 10px;font-size:12px" onchange="renderAllListings()">
+        <option value="">전체 방수</option>
+        <option value="10">10실↑</option>
+        <option value="20">20실↑</option>
+        <option value="30">30실↑</option>
+        <option value="40">40실↑</option>
+        <option value="50">50실↑</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;margin-left:auto;border:1px solid var(--border2);border-radius:7px;padding:4px 10px;white-space:nowrap">
         <input type="checkbox" id="al-chk-all" onchange="document.querySelectorAll('.al-row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:13px;height:13px">
         전체선택
       </label>
-      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700" onclick="allListingsGenImage()">🖼 선택 이미지 생성</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700;white-space:nowrap" onclick="allListingsGenImage()">🖼 선택 이미지 생성</button>
     </div>
     <div id="al-body" style="overflow-x:auto"></div>
   </div>
@@ -2374,11 +2416,37 @@ function openAllListings(){
   renderAllListings();
 }
 
+function alTypeChange(){
+  const wrap=document.getElementById('al-gstype-wrap');
+  if(wrap)wrap.style.display=document.getElementById('al-type')?.value==='고시원'?'flex':'none';
+  renderAllListings();
+}
+function alGsAllChange(){
+  const all=document.getElementById('al-gs-all');
+  ['al-gs-1','al-gs-2','al-gs-3'].forEach(id=>{const cb=document.getElementById(id);if(cb)cb.checked=false;});
+  if(all)all.checked=true;
+  renderAllListings();
+}
+function alGsCbChange(){
+  const checked=['al-gs-1','al-gs-2','al-gs-3'].some(id=>{const cb=document.getElementById(id);return cb&&cb.checked;});
+  const all=document.getElementById('al-gs-all');
+  if(all)all.checked=!checked;
+  renderAllListings();
+}
 function renderAllListings(){
   const el=document.getElementById('al-body');
   if(!el)return;
   const fType=document.getElementById('al-type')?.value||'';
   const fDeal=document.getElementById('al-deal')?.value||'';
+  const fProv=document.getElementById('al-prov')?.value||'';
+  const fSearch=(document.getElementById('al-search')?.value||'').trim().toLowerCase();
+  const fPrice=parseFloat(document.getElementById('al-price')?.value||'')||0;
+  const fRooms=parseInt(document.getElementById('al-rooms')?.value||'')||0;
+  const fPeriod=parseInt(document.getElementById('al-period')?.value||'')||0;
+  // 고시원 유형 체크박스
+  const alGsAll=document.getElementById('al-gs-all');
+  const alGsTypes=alGsAll&&alGsAll.checked?null:
+    ['al-gs-1','al-gs-2','al-gs-3'].map(id=>document.getElementById(id)).filter(cb=>cb&&cb.checked).map(cb=>cb.value);
 
   const all=[
     ...BASE.map(b=>({...b,ownerId:null,ownerName:'기본',ownerPhone:''})),
@@ -2386,11 +2454,27 @@ function renderAllListings(){
       if(u.role==='master'||!u.listings)return[];
       return u.listings.map(l=>({...l,ownerId:u.id,ownerName:u.name,ownerPhone:u.phone}));
     })
-  ].filter(i=>!i.hidden);  // 숨김 매물 제외
+  ].filter(i=>!i.hidden);
 
   const filtered=all.filter(i=>{
     if(fType&&i.type!==fType)return false;
     if(fDeal&&i.deal!==fDeal)return false;
+    if(alGsTypes&&alGsTypes.length&&i.type==='고시원'){if(!alGsTypes.includes(i.gsType||''))return false;}
+    if(fProv&&(i.prov||'서울')!==fProv)return false;
+    if(fSearch){
+      const hay=[i.name,i.area,i.dong,i.prov].filter(Boolean).join(' ').toLowerCase();
+      if(!hay.includes(fSearch))return false;
+    }
+    if(fPrice>0){
+      const isRent=i.deal==='월세';
+      const priceVal=isRent?((i.deposit||0)+(i.keymoney||0))/10000:(i.price||0)/10000;
+      if(priceVal>fPrice)return false;
+    }
+    if(fRooms>0&&(i.rooms||0)<fRooms)return false;
+    if(fPeriod>0){
+      const reg=i.regDate?new Date(i.regDate).getTime():0;
+      if(reg>0&&Date.now()-reg>fPeriod*24*60*60*1000)return false;
+    }
     return true;
   });
 
@@ -2426,7 +2510,7 @@ function renderAllListings(){
         const yColor=yRate?(parseFloat(yRate)>=10?'#3ecf8e':parseFloat(yRate)>=7?'#f59e0b':'#f87171'):'';
         const priceStr=isRent
           ?`보증금 ${won(item.deposit||0)}<br><span style="color:#f59e0b;font-weight:700">월 ${won((item.monthly||0)+(item.maintenance||0))}</span>`
-          :`<span style="color:#4f8cff;font-weight:700">${won(item.price||0)}</span>${km>0?`<br><span style="color:rgba(160,175,210,.6);font-size:11px">권리금 ${won(km)}</span>`:''}`;
+          :`<span style="color:#4f8cff;font-weight:700">${won(item.price||0)}</span>`;
         return `<tr>
           <td style="text-align:center">
             <input type="checkbox" class="al-row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px">
@@ -2928,18 +3012,11 @@ function drawListingTable(canvas, items){
         ctx.fillText('(월세'+won(mon)+'+관리비'+won(mnt)+')', C.price.x, py+50);
       }
     } else {
-      // 매매가
+      // 매매가만 표시
       ctx.fillStyle='rgba(147,197,253,.7)'; ctx.font='11px sans-serif';
-      ctx.fillText('매매가', C.price.x, cy-6);
-      ctx.fillStyle='#93c5fd'; ctx.font='bold 15px sans-serif';
-      ctx.fillText(won(item.price||0), C.price.x+46, cy-6);
-      // 권리금
-      if(km>0){
-        ctx.fillStyle='rgba(167,139,250,.7)'; ctx.font='11px sans-serif';
-        ctx.fillText('권리금', C.price.x, cy+12);
-        ctx.fillStyle='#ddd6fe'; ctx.font='bold 13px sans-serif';
-        ctx.fillText(won(km), C.price.x+46, cy+12);
-      }
+      ctx.fillText('매매가', C.price.x, cy-2);
+      ctx.fillStyle='#93c5fd'; ctx.font='bold 16px sans-serif';
+      ctx.fillText(won(item.price||0), C.price.x+46, cy-2);
     }
 
     // ⑦ 규모
