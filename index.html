@@ -1512,7 +1512,6 @@ function showBoardDetail(item){
   priceHtml+=`<div class="rooms-row">
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
-    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val" style="font-size:${String(item.floor||'-').length>3?'13px':'17px'}">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
   </div>`;
 
   // 담당자 정보
@@ -1954,7 +1953,7 @@ function showPopup(item){
 
   // 이름 + 주소
   document.getElementById('dp-name').textContent=item.name;
-  document.getElementById('dp-addr').innerHTML=`📍 ${maskAddr(item)}`;
+  document.getElementById('dp-addr').innerHTML=`📍 ${maskAddr(item)}${item.floor?' <span style="font-size:11px;font-weight:700;color:var(--text2);background:rgba(255,255,255,.07);padding:2px 7px;border-radius:8px;border:1px solid var(--border2);margin-left:4px">'+item.floor+'층</span>':''}`;
 
   // 찜 버튼
   const favBtn=document.getElementById('dpop-fav');
@@ -2019,7 +2018,6 @@ function showPopup(item){
   priceHtml+=`<div class="rooms-row">
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
-    <div class="rooms-chip"><div class="rooms-chip-label">층수</div><div class="rooms-chip-val" style="font-size:${String(item.floor||'-').length>3?'13px':'17px'}">${item.floor||'-'}<span style="font-size:12px;font-weight:500">층</span></div></div>
   </div>`;
   document.getElementById('dp-price-block').innerHTML=priceHtml;
 
@@ -2478,11 +2476,21 @@ function _doArchive(ownerId, lid){
     const u=users.find(u=>u.id===ownerId);
     if(u&&u.listings){
       const idx=u.listings.findIndex(l=>l.lid===lid);
-      if(idx>=0){item={...u.listings[idx],ownerId,ownerName:u.name};u.listings.splice(idx,1);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+      if(idx>=0){
+        u.listings[idx].hidden=true;
+        item={...u.listings[idx],ownerId,ownerName:u.name};
+        u.listings.splice(idx,1);
+        db.collection('users').doc(u.id).set(u).catch(e=>{});
+      }
     }
   } else {
     const idx=BASE.findIndex(b=>b.lid===lid);
-    if(idx>=0){item={...BASE[idx],ownerId:null,ownerName:'기본'};BASE.splice(idx,1);db.collection('base_hidden').doc(lid).set({deleted:true}).catch(e=>{});}
+    if(idx>=0){
+      BASE[idx].hidden=true;
+      item={...BASE[idx],ownerId:null,ownerName:'기본'};
+      BASE.splice(idx,1);
+      db.collection('base_hidden').doc(lid).set({hidden:true,deleted:true,archivedAt:Date.now()}).catch(e=>{});
+    }
   }
   if(item){
     item.archivedAt=Date.now();
@@ -2541,18 +2549,25 @@ function restoreArchived(lid){
   const item={...archivedListings[idx]};
   const ownerId=item.ownerId;
   delete item.archivedAt;
+  item.hidden=false; // 복원 시 노출 상태로 복구
   if(ownerId){
     const u=users.find(u=>u.id===ownerId);
-    if(u){if(!u.listings)u.listings=[];u.listings.push(item);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+    if(u){
+      if(!u.listings)u.listings=[];
+      u.listings.push(item);
+      db.collection('users').doc(u.id).set(u).catch(e=>{});
+    }
   } else {
     delete item.ownerId;delete item.ownerName;
+    item.hidden=false;
     BASE.push(item);
+    // base_hidden 문서 삭제 → 노출 복구
     db.collection('base_hidden').doc(lid).delete().catch(e=>{});
   }
   archivedListings.splice(idx,1);
   try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
   renderAArchived();render();
-  alert('매물이 복원되었습니다!');
+  alert('매물이 복원되었습니다! 노출 상태로 되돌아갑니다.');
 }
 
 function deleteArchived(lid){
