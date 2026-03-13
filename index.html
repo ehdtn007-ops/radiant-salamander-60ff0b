@@ -635,6 +635,15 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="fsec">📝 매물 특징 설명</div>
     <div class="fg"><label class="fl">자유 서술 (특징, 장점, 주변환경 등)</label>
       <textarea class="fi" id="ldesc" style="min-height:100px" placeholder="예: 강남역 도보 3분 거리의 역세권 고시원입니다. 전 객실 에어컨/냉장고 풀옵션, 현재 만실 운영중이며 수익률 약 8% 수준입니다. 리모델링 2022년 완료로 내부 깔끔합니다."></textarea>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button type="button" id="lbtn-ai" class="btn btn-sm" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:700;display:flex;align-items:center;gap:5px" onclick="genAdCopy('l')">
+          ✨ AI 광고문구 생성
+        </button>
+        <button type="button" id="lbtn-ai-retry" class="btn btn-sm" style="display:none;background:rgba(124,58,237,.18);color:#a78bfa;border:1px solid rgba(124,58,237,.4)" onclick="genAdCopy('l')">
+          🔄 다시 생성
+        </button>
+        <span id="lbtn-ai-status" style="font-size:11px;color:var(--text2);align-self:center"></span>
+      </div>
     </div>
 
     <button class="btn btn-primary" style="margin-top:8px" onclick="doAddListing()">매물 등록하기</button>
@@ -788,7 +797,18 @@ select:hover,select:focus{border-color:var(--accent)}
       </div>
     </div>
     <div class="fsec">📝 매물 특징 설명</div>
-    <div class="fg"><textarea class="fi" id="eldesc" style="min-height:100px"></textarea></div>
+    <div class="fg">
+      <textarea class="fi" id="eldesc" style="min-height:100px"></textarea>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button type="button" id="elbtn-ai" class="btn btn-sm" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:700;display:flex;align-items:center;gap:5px" onclick="genAdCopy('el')">
+          ✨ AI 광고문구 생성
+        </button>
+        <button type="button" id="elbtn-ai-retry" class="btn btn-sm" style="display:none;background:rgba(124,58,237,.18);color:#a78bfa;border:1px solid rgba(124,58,237,.4)" onclick="genAdCopy('el')">
+          🔄 다시 생성
+        </button>
+        <span id="elbtn-ai-status" style="font-size:11px;color:var(--text2);align-self:center"></span>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn" style="flex:1" onclick="closeEditListing()">취소</button>
       <button class="btn btn-primary" style="flex:2" onclick="doEditListing()">✅ 수정 저장</button>
@@ -2023,6 +2043,31 @@ function showPopup(item){
     <div class="rooms-chip"><div class="rooms-chip-label">방 갯수</div><div class="rooms-chip-val">${item.rooms||'-'}<span style="font-size:12px;font-weight:500">실</span></div></div>
     <div class="rooms-chip"><div class="rooms-chip-label">면적</div><div class="rooms-chip-val" style="font-size:15px">${item.area2||'-'}<span style="font-size:11px;font-weight:500">㎡</span></div></div>
   </div>`;
+  // ── 수익률 계산 ──
+  let yieldHtml='';
+  {
+    const isRentYield=item.deal==='월세';
+    const annualRev=isRentYield
+      ?((item.monthly||0)+(item.maintenance||0))*12  // 임대: (월세+관리비)×12
+      :(item.monthly||0)*12;                          // 혹시 매매에 임대수입 있는 경우
+    const investBase=isRentYield
+      ?(item.deposit||0)+(item.keymoney||0)           // 임대: 보증금+권리금
+      :(item.price||0)+(item.keymoney||0);            // 매매: 매매가+권리금
+    if(investBase>0&&annualRev>0){
+      const yRate=(annualRev/investBase*100).toFixed(1);
+      const yColor=parseFloat(yRate)>=10?'#3ecf8e':parseFloat(yRate)>=7?'#ffb300':'#f87171';
+      const yLabel=isRentYield?'수익률 (연 / 보증금+권리금 기준)':'수익률 (연 / 투자금 기준)';
+      yieldHtml=`
+      <div style="margin-top:10px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,rgba(62,207,142,.1),rgba(79,140,255,.08));border:1.5px solid rgba(62,207,142,.2);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:10px;color:var(--text2);font-weight:600;letter-spacing:.5px">📈 ${yLabel}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">연수입 ${won(annualRev)} ÷ 투자금 ${won(investBase)}</div>
+        </div>
+        <div style="font-size:26px;font-weight:900;color:${yColor}">${yRate}<span style="font-size:14px">%</span></div>
+      </div>`;
+    }
+  }
+  priceHtml+=yieldHtml;
   document.getElementById('dp-price-block').innerHTML=priceHtml;
 
   // ── 특징 설명 ──
@@ -2362,6 +2407,7 @@ function renderAListings(){
     <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${filtered.length}</b>건 표시 중 (전체 ${all.length}건)</div>
     <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700" onclick="bulkGenerateImages()">🖼 선택 이미지 생성</button>
       <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3);font-weight:700" onclick="bulkArchive()">📦 선택 지난매물로</button>
       <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;border:1px solid var(--border2);border-radius:7px;padding:4px 9px;white-space:nowrap">
@@ -2435,6 +2481,333 @@ function renderAListings(){
   </table>
   </div>`}`;
 }
+
+// ════════════════════════════════════════════
+// 1. AI 광고문구 생성
+// ════════════════════════════════════════════
+function genAdCopy(p){
+  const btnMain=document.getElementById(p+'btn-ai');
+  const btnRetry=document.getElementById(p+'btn-ai-retry');
+  const status=document.getElementById(p+'btn-ai-status');
+  const descEl=document.getElementById(p+'desc');
+
+  // 폼 데이터 수집
+  const type=document.getElementById(p+'type')?.value||'';
+  const deal=document.getElementById(p+'deal')?.value||'';
+  const name=document.getElementById(p+'name')?.value||'';
+  const prov=document.getElementById(p+'prov')?.value||'';
+  const area=document.getElementById(p+'area')?.value||'';
+  const dongSel=document.getElementById(p+'dong-sel')?.value||'';
+  const rooms=parseInt(document.getElementById(p+'rooms')?.value)||0;
+  const area2=parseFloat(document.getElementById(p+'area2')?.value)||0;
+  const floor=document.getElementById(p+'floor')?.value||'';
+  const totalfloor=parseInt(document.getElementById(p+'totalfloor')?.value)||0;
+  const year=parseInt(document.getElementById(p+'year')?.value)||0;
+  const parking=parseInt(document.getElementById(p+'parking')?.value)||0;
+  const maintenance=parseInt(document.getElementById(p+'maintenance')?.value)||0;
+  const price=parseInt(document.getElementById(p+'price')?.value)||0;
+  const deposit=parseInt(document.getElementById(p+'deposit')?.value)||0;
+  const monthly=parseInt(document.getElementById(p+'monthly')?.value)||0;
+  const keymoney=parseInt(document.getElementById(p+'keymoney')?.value||document.getElementById(p+'keymoney2')?.value)||0;
+  const direction=document.getElementById(p+'direction')?.value||'';
+  const movein=document.getElementById(p+'movein')?.value||'';
+  const isRent=deal==='월세';
+
+  // ── 수익률 계산 ──
+  const annualRev=(monthly+maintenance)*12;
+  const investBase=isRent?(deposit+keymoney):(price+keymoney);
+  const yRate=investBase>0&&annualRev>0?(annualRev/investBase*100).toFixed(1):null;
+
+  // ── 건축연도 → 신축/구분 ──
+  const thisYear=new Date().getFullYear();
+  const age=year>0?thisYear-year:null;
+  const ageLabel=age===null?null:age<=5?'신축급':age<=10?'준신축':age<=15?'관리 양호':null;
+
+  // ── 위치 표현 ──
+  const location=`${prov||''} ${area||''} ${dongSel||''}`.trim();
+
+  // ── 문장 풀 (조건별) ──
+  const sentences=[];
+
+  // 1) 입지 문장
+  const loc1=[
+    `${location} 중심부에 위치한 ${type}으로, 풍부한 유동인구와 안정적인 수요를 자랑합니다.`,
+    `${location} 핵심 상권 내 입지로, 연중 공실 걱정 없는 프리미엄 매물입니다.`,
+    `${location}에 자리잡은 탁월한 입지의 ${type}, 접근성과 가시성 모두 최상급입니다.`,
+  ];
+  sentences.push(loc1[Math.floor(Math.random()*loc1.length)]);
+
+  // 2) 수익률 문장 (데이터 있을 때)
+  if(yRate){
+    const yNum=parseFloat(yRate);
+    if(isRent){
+      if(yNum>=10) sentences.push(`보증금 ${won(deposit)}원에 월 수입 ${won(monthly+maintenance)}원, 연 수익률 ${yRate}%의 고수익 임대 매물로 즉시 수익 창출이 가능합니다.`);
+      else if(yNum>=7) sentences.push(`보증금 대비 연 ${yRate}% 수익률로, 안정적인 월 임대수입 ${won(monthly+maintenance)}원이 보장됩니다.`);
+      else sentences.push(`보증금 ${won(deposit)}원에 월세 ${won(monthly)}원, 수익형 투자로 검토하기 좋은 조건의 매물입니다.`);
+    } else {
+      if(yNum>=10) sentences.push(`투자금 대비 연 ${yRate}%의 고수익 구조로, 부동산 투자 최적 매물입니다.`);
+      else if(yNum>=7) sentences.push(`안정적인 연 ${yRate}% 수익률을 기대할 수 있는 수익형 ${type}입니다.`);
+    }
+  } else if(isRent&&monthly>0){
+    sentences.push(`월 ${won(monthly)}원의 고정 임대수입이 발생하는 안정적인 수익형 매물입니다.`);
+  } else if(!isRent&&price>0){
+    sentences.push(`${won(price)}원의 합리적인 매매가로 즉시 운영 가능한 ${type}입니다.`);
+  }
+
+  // 3) 시설/규모 문장
+  const facSents=[];
+  if(rooms>0) facSents.push(`${rooms}실 규모`);
+  if(area2>0) facSents.push(`전용 ${area2}㎡`);
+  if(floor) facSents.push(`${floor}층`+(totalfloor>0?` / 총${totalfloor}층`:''));
+  if(direction) facSents.push(`${direction} 향`);
+  if(parking>0) facSents.push(`주차 ${parking}대`);
+  if(facSents.length>0){
+    sentences.push(`${facSents.join(', ')}의 ${ageLabel?ageLabel+' ':' '}시설로, 입주 즉시 운영 가능한 상태입니다.`);
+  }
+
+  // 4) 연식 강조 (신축/준신축일 때)
+  if(ageLabel&&(ageLabel==='신축급'||ageLabel==='준신축')){
+    sentences.push(`${year}년 준공 ${ageLabel} 건물로 리모델링 비용 없이 바로 영업 가능, 초기 투자비용 절감 효과가 탁월합니다.`);
+  }
+
+  // 5) 권리금/입주 문장
+  if(!isRent&&keymoney>0){
+    sentences.push(`권리금 ${won(keymoney)}원에 영업 노하우와 기존 고객까지 인수 가능, 즉시 수익 창출 구조가 완성되어 있습니다.`);
+  }
+  if(movein&&movein!=='협의'){
+    sentences.push(`${movein} 입주 가능으로 빠른 수익 실현이 가능합니다.`);
+  } else if(movein==='즉시'){
+    sentences.push(`즉시 입주 가능한 매물로, 투자 결정 후 빠른 운영 시작이 가능합니다.`);
+  }
+
+  // 6) 마무리 문장 (랜덤)
+  const closing=[
+    `희소성 높은 매물로 조기 계약이 예상됩니다. 관심 있으시면 빠른 연락 바랍니다.`,
+    `수익성과 입지를 모두 갖춘 이 매물은 장기 안정 투자처로 강력 추천드립니다.`,
+    `문의 주시면 상세 자료 및 현장 방문을 안내해 드리겠습니다.`,
+  ];
+  sentences.push(closing[Math.floor(Math.random()*closing.length)]);
+
+  // 중복 제거 후 최대 5문장
+  const result=[...new Set(sentences)].slice(0,5).join('\n');
+
+  descEl.value=result;
+  btnRetry.style.display='inline-flex';
+  status.textContent='✅ 생성 완료';
+}
+
+// ════════════════════════════════════════════
+// 2. 선택 매물 안내 이미지 생성 (한 장, 줄 나열)
+// ════════════════════════════════════════════
+function bulkGenerateImages(){
+  const checked=[...document.querySelectorAll('.row-chk:checked')];
+  if(!checked.length){alert('이미지를 생성할 매물을 선택하세요.');return;}
+  const all=[
+    ...BASE.map(b=>({...b,ownerId:null,ownerName:'기본'})),
+    ...users.flatMap(u=>u.role==='master'||!u.listings?[]:(u.listings||[]).map(l=>({...l,ownerId:u.id,ownerName:u.name})))
+  ];
+  const selected=checked.map(c=>all.find(i=>i.lid===c.dataset.lid)).filter(Boolean);
+  if(!selected.length){alert('매물 정보를 찾을 수 없습니다.');return;}
+
+  const W=920, HEADER=110, ROW_H=72, FOOTER=52;
+  const H=HEADER+selected.length*ROW_H+FOOTER;
+  const canvas=document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  drawListingTable(canvas, selected);
+
+  const ov=document.createElement('div');
+  ov.id='img-gen-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:24px 16px';
+  const wrap=document.createElement('div');
+  wrap.style.cssText='width:100%;max-width:960px';
+  wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="color:#f0f2ff;font-size:15px;font-weight:700">🖼 매물 안내 이미지 (${selected.length}건) — 클릭하면 PNG 다운로드</div>
+    <button onclick="document.getElementById('img-gen-overlay').remove()" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;padding:6px 16px;cursor:pointer;font-size:13px">✕ 닫기</button>
+  </div>`;
+  canvas.style.cssText='width:100%;border-radius:14px;box-shadow:0 6px 32px rgba(0,0,0,.6);cursor:pointer;display:block';
+  canvas.title='클릭하면 PNG 다운로드';
+  canvas.addEventListener('click',()=>{
+    const a=document.createElement('a');
+    a.download='매물안내_'+selected.length+'건.png';
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+  });
+  wrap.appendChild(canvas);
+  ov.appendChild(wrap);
+  document.body.appendChild(ov);
+}
+
+function drawListingTable(canvas, items){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const HEADER=110, ROW_H=72;
+
+  // 배경
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0d1528'); bg.addColorStop(1,'#111827');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  // 상단 컬러 바
+  const bar=ctx.createLinearGradient(0,0,W,0);
+  bar.addColorStop(0,'#4f8cff'); bar.addColorStop(0.5,'#7c3aed'); bar.addColorStop(1,'#3ecf8e');
+  ctx.fillStyle=bar; ctx.fillRect(0,0,W,5);
+
+  // 헤더 타이틀
+  ctx.fillStyle='#f0f2ff'; ctx.font='bold 22px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('추천 매물 안내', 28, 44);
+  ctx.fillStyle='rgba(180,190,220,.55)'; ctx.font='13px sans-serif';
+  ctx.fillText('총 '+items.length+'건  ·  첫번째공인중개사사무소', 28, 66);
+
+  // 컬럼 헤더 배경
+  ctx.fillStyle='rgba(79,140,255,.1)'; ctx.fillRect(0,80,W,28);
+  ctx.strokeStyle='rgba(79,140,255,.3)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,80); ctx.lineTo(W,80); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,108); ctx.lineTo(W,108); ctx.stroke();
+
+  const cols=[
+    ['No.',   14,  30,'center'],
+    ['종류',   52,  58,'center'],
+    ['매물명', 118,182,'left'],
+    ['위치',   308,160,'left'],
+    ['거래',   476, 50,'center'],
+    ['가격',   534,188,'left'],
+    ['규모',   730, 88,'left'],
+    ['수익률', 826, 72,'center'],
+  ];
+  ctx.fillStyle='rgba(180,200,255,.6)'; ctx.font='bold 11px sans-serif';
+  cols.forEach(([label,x,w,align])=>{
+    ctx.textAlign=align;
+    const tx=align==='center'?x+w/2:x;
+    ctx.fillText(label,tx,98);
+  });
+
+  const tagColors={고시원:'#4f8cff',모텔:'#a78bfa'};
+  const dealBg={매매:'rgba(62,207,142,.15)',월세:'rgba(245,158,11,.15)'};
+  const dealColor={매매:'#3ecf8e',월세:'#f59e0b'};
+
+  items.forEach((item,idx)=>{
+    const rowY=HEADER+idx*ROW_H;
+    const isRent=item.deal==='월세';
+    const km=item.keymoney||0;
+    const cy=rowY+ROW_H/2;
+
+    // 행 배경
+    ctx.fillStyle=idx%2===0?'rgba(255,255,255,.025)':'rgba(0,0,0,0)';
+    ctx.fillRect(0,rowY,W,ROW_H);
+
+    // 행 구분선
+    ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(14,rowY+ROW_H-1); ctx.lineTo(W-14,rowY+ROW_H-1); ctx.stroke();
+
+    // No.
+    ctx.fillStyle='rgba(180,190,220,.4)'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(idx+1, 14+15, cy+5);
+
+    // 종류 뱃지
+    const tc=tagColors[item.type]||'#64748b';
+    ctx.fillStyle=tc+'33'; imgRoundRect(ctx,52,cy-12,50,22,5,true);
+    ctx.fillStyle=tc; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(item.type||'-',52+25,cy+4);
+
+    // 매물명
+    ctx.fillStyle='#e8eeff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='left';
+    ctx.fillText(imgClipText(ctx,item.name||'-',175),118,cy-3);
+    if(item.floor){
+      ctx.fillStyle='rgba(150,165,200,.5)'; ctx.font='10px sans-serif';
+      ctx.fillText(item.floor+'층',118,cy+13);
+    }
+
+    // 위치
+    ctx.fillStyle='rgba(160,175,210,.65)'; ctx.font='12px sans-serif';
+    ctx.fillText(imgClipText(ctx,maskAddr(item),155),308,cy+4);
+
+    // 거래 뱃지
+    ctx.fillStyle=dealBg[item.deal]||'rgba(255,255,255,.08)';
+    imgRoundRect(ctx,476,cy-12,44,22,5,true);
+    ctx.fillStyle=dealColor[item.deal]||'#94a3b8';
+    ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(item.deal||'-',476+22,cy+4);
+
+    // 가격
+    ctx.textAlign='left';
+    if(isRent){
+      ctx.fillStyle='#93c5fd'; ctx.font='11px sans-serif';
+      ctx.fillText('보증금 '+won(item.deposit||0),534,cy-8);
+      ctx.fillStyle='#f0f2ff'; ctx.font='bold 13px sans-serif';
+      ctx.fillText('월 '+won((item.monthly||0)+(item.maintenance||0)),534,cy+8);
+      if((item.maintenance||0)>0){
+        ctx.fillStyle='rgba(160,175,210,.5)'; ctx.font='10px sans-serif';
+        ctx.fillText('(월세+관리비)',534,cy+21);
+      }
+    } else {
+      ctx.fillStyle='#93c5fd'; ctx.font='11px sans-serif';
+      ctx.fillText('매매 '+won(item.price||0),534,cy-8);
+      if(km>0){
+        ctx.fillStyle='rgba(160,175,210,.6)'; ctx.font='11px sans-serif';
+        ctx.fillText('권리금 '+won(km),534,cy+8);
+      }
+    }
+
+    // 규모
+    ctx.fillStyle='#cbd5e1'; ctx.font='12px sans-serif'; ctx.textAlign='left';
+    const rms=item.rooms?item.rooms+'실':'';
+    const ar=item.area2?item.area2+'㎡':'';
+    ctx.fillText((rms+(rms&&ar?' / ':'')+ar)||'-',730,cy-3);
+    if(item.year){
+      ctx.fillStyle='rgba(150,165,200,.5)'; ctx.font='10px sans-serif';
+      ctx.fillText(item.year+'년',730,cy+13);
+    }
+
+    // 수익률
+    const annualRev=isRent?((item.monthly||0)+(item.maintenance||0))*12:0;
+    const invBase=isRent?(item.deposit||0)+km:(item.price||0)+km;
+    if(invBase>0&&annualRev>0){
+      const yr=(annualRev/invBase*100).toFixed(1);
+      const yc=parseFloat(yr)>=10?'#34d399':parseFloat(yr)>=7?'#fbbf24':'#f87171';
+      ctx.fillStyle=yc+'22'; imgRoundRect(ctx,826,cy-16,68,30,6,true);
+      ctx.fillStyle=yc; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(yr+'%',826+34,cy+5);
+    } else {
+      ctx.fillStyle='rgba(150,165,200,.3)'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('-',826+34,cy+5);
+    }
+  });
+
+  // 푸터
+  const footerY=HEADER+items.length*ROW_H;
+  ctx.strokeStyle='rgba(79,140,255,.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,footerY); ctx.lineTo(W,footerY); ctx.stroke();
+  ctx.fillStyle='rgba(100,116,139,.5)'; ctx.font='12px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('본 안내서는 참고용이며 실제 조건은 협의에 따라 변경될 수 있습니다.',24,footerY+28);
+  ctx.fillStyle='rgba(79,140,255,.6)'; ctx.font='bold 12px sans-serif'; ctx.textAlign='right';
+  ctx.fillText('첫번째공인중개사사무소  ☎ 02-6404-5455',W-24,footerY+28);
+}
+
+function imgRoundRect(ctx,x,y,w,h,r,fill){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+  if(fill)ctx.fill(); else ctx.stroke();
+}
+
+function imgClipText(ctx,text,maxW){
+  if(!text)return'-';
+  if(ctx.measureText(text).width<=maxW)return text;
+  while(text.length>1&&ctx.measureText(text+'…').width>maxW)text=text.slice(0,-1);
+  return text+'…';
+}
+
+function roundRect(ctx,x,y,w,h,r,fill){
+  imgRoundRect(ctx,x,y,w,h,r,fill);
+}
+
+function clipText(ctx,text,maxW){
+  return imgClipText(ctx,text,maxW);
+}
+
+
 function bulkRefreshToday(){
   const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
   if(!items.length){alert('선택된 매물이 없습니다.');return;}
