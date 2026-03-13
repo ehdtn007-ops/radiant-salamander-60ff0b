@@ -2486,17 +2486,16 @@ function renderAllListings(){
   const tagColors={고시원:'#4f8cff',모텔:'#a78bfa'};
   const dealColor={매매:'#3ecf8e',월세:'#f59e0b'};
 
-  el.innerHTML=`<table class="atable" style="min-width:800px">
+  el.innerHTML=`<table class="atable" style="min-width:860px">
     <thead>
       <tr>
         <th style="width:32px"></th>
         <th style="width:64px">종류</th>
         <th style="width:56px">거래</th>
         <th>매물명</th>
-        <th style="width:150px">위치</th>
-        <th style="width:200px">가격</th>
+        <th style="width:140px">위치</th>
+        <th style="width:260px">가격</th>
         <th style="width:110px">규모</th>
-        <th style="width:70px">수익률</th>
         <th style="width:80px">담당자</th>
       </tr>
     </thead>
@@ -2504,30 +2503,40 @@ function renderAllListings(){
       ${filtered.map((item,idx)=>{
         const isRent=item.deal==='월세';
         const km=item.keymoney||0;
-        const annualRev=isRent?((item.monthly||0)+(item.maintenance||0))*12:0;
-        const invBase=isRent?(item.deposit||0)+km:(item.price||0)+km;
-        const yRate=invBase>0&&annualRev>0?(annualRev/invBase*100).toFixed(1):null;
-        const yColor=yRate?(parseFloat(yRate)>=10?'#3ecf8e':parseFloat(yRate)>=7?'#f59e0b':'#f87171'):'';
+        const monthly=item.monthly||0;
+        const mnt=item.maintenance||0;
+        const dep=item.deposit||0;
+        const monthlySum=monthly+mnt;
         const priceStr=isRent
-          ?`보증금 ${won(item.deposit||0)}<br><span style="color:#f59e0b;font-weight:700">월 ${won((item.monthly||0)+(item.maintenance||0))}</span>`
-          :`<span style="color:#4f8cff;font-weight:700">${won(item.price||0)}</span>`;
+          ?`<div style="font-size:11px;line-height:1.7">
+              <span style="color:var(--text2)">보증금</span> <b style="color:#e8eeff">${won(dep)}</b>
+              ${km>0?`&nbsp;·&nbsp;<span style="color:var(--text2)">권리금</span> <b style="color:#ddd6fe">${won(km)}</b>`:''}
+            </div>
+            <div style="font-size:11px;line-height:1.7">
+              <span style="color:var(--text2)">임대료</span> <b style="color:#93c5fd">${won(monthly)}</b>
+              &nbsp;·&nbsp;<span style="color:var(--text2)">관리비</span> <b style="color:#93c5fd">${won(mnt)}</b>
+            </div>
+            <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-top:1px">합 ${won(monthlySum)}<span style="font-size:10px;font-weight:500;opacity:.7">/월</span></div>`
+          :`<span style="color:#4f8cff;font-weight:700;font-size:13px">${won(item.price||0)}</span>`;
         return `<tr>
           <td style="text-align:center">
             <input type="checkbox" class="al-row-chk" data-lid="${item.lid}" data-owner="${item.ownerId||''}" style="cursor:pointer;width:14px;height:14px">
           </td>
-          <td><span class="dtag ${item.type}" style="font-size:10px;background:${tagColors[item.type]||'#64748b'}22;color:${tagColors[item.type]||'#94a3b8'};border:1px solid ${tagColors[item.type]||'#64748b'}44">${item.type}</span></td>
+          <td>
+            <span class="dtag ${item.type}" style="font-size:10px;background:${tagColors[item.type]||'#64748b'}22;color:${tagColors[item.type]||'#94a3b8'};border:1px solid ${tagColors[item.type]||'#64748b'}44">${item.type}</span>
+            ${item.gsType?`<span class="pin-gstype ${item.gsType}" style="display:block;margin-top:2px">${item.gsType}</span>`:''}
+          </td>
           <td><span class="dtag" style="font-size:10px;background:${dealColor[item.deal]||'#fff'}18;color:${dealColor[item.deal]||'#fff'};border:1px solid ${dealColor[item.deal]||'#fff'}44">${item.deal}</span></td>
           <td>
             <div style="font-weight:700;font-size:13px;color:#e8eeff">${item.name||'-'}</div>
             ${item.floor?`<div style="font-size:11px;color:rgba(150,165,200,.6)">${item.floor}층</div>`:''}
           </td>
           <td style="font-size:12px;color:rgba(160,175,210,.7)">${fullAddr(item)}</td>
-          <td style="font-size:12px">${priceStr}</td>
+          <td style="font-size:12px;vertical-align:middle">${priceStr}</td>
           <td style="font-size:12px;color:#cbd5e1">
             ${item.rooms?item.rooms+'실':''}${item.rooms&&item.area2?' / ':''}${item.area2?item.area2+'㎡':''}
             ${item.year?`<div style="font-size:10px;color:rgba(150,165,200,.5)">${item.year}년</div>`:''}
           </td>
-          <td style="text-align:center;font-weight:700;font-size:13px;color:${yColor}">${yRate?yRate+'%':'-'}</td>
           <td style="font-size:11px;color:var(--accent);font-weight:700">${item.ownerName||'기본'}</td>
         </tr>`;
       }).join('')}
