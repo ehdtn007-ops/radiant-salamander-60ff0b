@@ -2277,7 +2277,20 @@ function renderHeader(){
 // ════════════════════════════════════════════
 // 모달
 // ════════════════════════════════════════════
-function show(id){document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');pushPopupHistory(id);}
+function show(id){
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  // 회원가입 모달 열 때 항상 폼 초기화
+  if(id==='ov-reg'){
+    const fb=document.getElementById('reg-form-body');
+    const fs=document.getElementById('reg-success');
+    if(fb)fb.classList.remove('hidden');
+    if(fs)fs.classList.add('hidden');
+    ['ri','rp','rp2','rn','rphone'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+    const re=document.getElementById('reg-err');if(re)re.classList.remove('show');
+  }
+  pushPopupHistory(id);
+}
 function closeAll(){document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden'));}
 
 // ════════════════════════════════════════════
@@ -2339,7 +2352,7 @@ function doRegister(){
   // 상태를 'pending'으로 등록
   const newUser={id,pw,name,phone,license:'',role:'user',status:'pending',listings:[]};
   users.push(newUser);
-  db.collection('users').doc(id).set(newUser).catch(e=>console.error('회원가입 저장 실패:',e));
+  db.collection('users').doc(id).set(newUser).then(()=>{console.log('회원가입 저장 완료:',id);}).catch(e=>{console.error('회원가입 저장 실패:',e);alert('서버 저장 중 오류가 발생했습니다. 다시 시도해주세요.');users.splice(users.findIndex(u=>u.id===id),1);document.getElementById('reg-form-body').classList.remove('hidden');document.getElementById('reg-success').classList.add('hidden');});
   err.classList.remove('show');
   // 폼 숨기고 성공 메시지 표시
   document.getElementById('reg-form-body').classList.add('hidden');
@@ -2407,9 +2420,10 @@ function doAddListing(){
   const u=users.find(u=>u.id===currentUser.id);
   if(!u.listings)u.listings=[];
   u.listings.push(lst);
-  db.collection('users').doc(u.id).set(u).catch(e=>console.error('매물 등록 저장 실패:',e));
-  closeAll();err.classList.remove('show');render();
-  alert('매물이 등록되었습니다!');
+  db.collection('users').doc(u.id).set(u).then(()=>{
+    closeAll();err.classList.remove('show');render();
+    alert('매물이 등록되었습니다!');
+  }).catch(e=>{console.error('매물 등록 저장 실패:',e);alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');});
 }
 
 // ════════════════════════════════════════════
@@ -3708,7 +3722,7 @@ function doEditListing(){
       if(idx>=0){
         updated.registeredAt=u.listings[idx].registeredAt;
         u.listings[idx]={...u.listings[idx],...updated};
-        db.collection('users').doc(u.id).set(u).catch(e=>console.error('매물 수정 저장 실패:',e));
+        db.collection('users').doc(u.id).set(u).then(()=>{console.log('매물 수정 저장 완료');}).catch(e=>{console.error('매물 수정 저장 실패:',e);alert('저장 중 오류가 발생했습니다. 인터넷 연결을 확인하세요.');});
       }
     }
   } else {
@@ -4104,8 +4118,10 @@ function saveProfileInfo(){
   if(!name){msg.style.color='var(--red)';msg.textContent='이름을 입력해주세요.';return;}
   currentUser.name=name;
   currentUser.phone=phone;
-  const ref=firebase.database().ref('users/'+currentUser.id);
-  ref.update({name,phone}).then(()=>{
+  // users 배열 동기화
+  const uIdx=users.findIndex(u=>u.id===currentUser.id);
+  if(uIdx>=0){users[uIdx].name=name;users[uIdx].phone=phone;}
+  db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
     msg.style.color='var(--green)';msg.textContent='✅ 저장됐습니다!';
     setTimeout(()=>{msg.textContent='';},2500);
   }).catch(()=>{msg.style.color='var(--red)';msg.textContent='저장 실패. 다시 시도해주세요.';});
@@ -4121,7 +4137,11 @@ function saveProfilePw(){
   if(nw.length<6){msg.style.color='var(--red)';msg.textContent='새 비밀번호는 6자 이상이어야 합니다.';return;}
   if(nw!==nw2){msg.style.color='var(--red)';msg.textContent='새 비밀번호가 일치하지 않습니다.';return;}
   currentUser.pw=nw;
-  firebase.database().ref('users/'+currentUser.id+'/pw').set(nw).then(()=>{
+  // users 배열 동기화
+  const uPwIdx=users.findIndex(u=>u.id===currentUser.id);
+  if(uPwIdx>=0)users[uPwIdx].pw=nw;
+  localStorage.setItem('sessionUserPw',nw);
+  db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
     msg.style.color='var(--green)';msg.textContent='✅ 비밀번호가 변경됐습니다!';
     document.getElementById('pf-pw-cur').value='';
     document.getElementById('pf-pw-new').value='';
