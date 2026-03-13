@@ -2465,7 +2465,7 @@ function allListingsGenImage(){
   const selected=checked.map(c=>all.find(i=>i.lid===c.dataset.lid)).filter(Boolean);
   if(!selected.length){alert('매물 정보를 찾을 수 없습니다.');return;}
 
-  const W=920, HEADER=110, ROW_H=72, FOOTER=52;
+  const W=1060, HEADER=110, ROW_H=92, FOOTER=52;
   const H=HEADER+selected.length*ROW_H+FOOTER;
   const canvas=document.createElement('canvas');
   canvas.width=W; canvas.height=H;
@@ -2763,7 +2763,7 @@ function bulkGenerateImages(){
   const selected=checked.map(c=>all.find(i=>i.lid===c.dataset.lid)).filter(Boolean);
   if(!selected.length){alert('매물 정보를 찾을 수 없습니다.');return;}
 
-  const W=920, HEADER=110, ROW_H=72, FOOTER=52;
+  const W=1060, HEADER=110, ROW_H=92, FOOTER=52;
   const H=HEADER+selected.length*ROW_H+FOOTER;
   const canvas=document.createElement('canvas');
   canvas.width=W; canvas.height=H;
@@ -2794,7 +2794,7 @@ function bulkGenerateImages(){
 function drawListingTable(canvas, items){
   const ctx=canvas.getContext('2d');
   const W=canvas.width, H=canvas.height;
-  const HEADER=110, ROW_H=72;
+  const HEADER=110, ROW_H=92;
 
   // 배경
   const bg=ctx.createLinearGradient(0,0,0,H);
@@ -2818,20 +2818,32 @@ function drawListingTable(canvas, items){
   ctx.beginPath(); ctx.moveTo(0,80); ctx.lineTo(W,80); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0,108); ctx.lineTo(W,108); ctx.stroke();
 
-  const cols=[
-    ['No.',   14,  30,'center'],
-    ['종류',   52,  58,'center'],
-    ['매물명', 118,182,'left'],
-    ['위치',   308,160,'left'],
-    ['거래',   476, 50,'center'],
-    ['가격',   534,188,'left'],
-    ['규모',   730, 88,'left'],
-    ['수익률', 826, 72,'center'],
+  // 컬럼 정의: [label, x, w, align]
+  // No | 종류 | 매물명 | 주소+층수 | 거래 | 가격 | 규모 | 수익률
+  const C={
+    no:   {x:14,  w:28},
+    type: {x:50,  w:58},
+    name: {x:116, w:158},
+    addr: {x:282, w:200},
+    deal: {x:490, w:48},
+    price:{x:546, w:268},
+    size: {x:822, w:96},
+    rate: {x:926, w:74},
+  };
+  const colHeaders=[
+    ['No.',    C.no,   'center'],
+    ['종류',   C.type, 'center'],
+    ['매물명', C.name, 'left'],
+    ['주소 / 층수', C.addr,'left'],
+    ['거래',   C.deal, 'center'],
+    ['가격',   C.price,'left'],
+    ['규모',   C.size, 'left'],
+    ['수익률', C.rate, 'center'],
   ];
   ctx.fillStyle='rgba(180,200,255,.6)'; ctx.font='bold 11px sans-serif';
-  cols.forEach(([label,x,w,align])=>{
+  colHeaders.forEach(([label,col,align])=>{
     ctx.textAlign=align;
-    const tx=align==='center'?x+w/2:x;
+    const tx=align==='center'?col.x+col.w/2:col.x;
     ctx.fillText(label,tx,98);
   });
 
@@ -2844,6 +2856,8 @@ function drawListingTable(canvas, items){
     const isRent=item.deal==='월세';
     const km=item.keymoney||0;
     const cy=rowY+ROW_H/2;
+    // 가격 행 기준점: 4줄(임대) 또는 2줄(매매) - 위에서부터 배치
+    const py=rowY+14; // 가격 블록 시작 y (각 줄 +14씩)
 
     // 행 배경
     ctx.fillStyle=idx%2===0?'rgba(255,255,255,.025)':'rgba(0,0,0,0)';
@@ -2853,77 +2867,105 @@ function drawListingTable(canvas, items){
     ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(14,rowY+ROW_H-1); ctx.lineTo(W-14,rowY+ROW_H-1); ctx.stroke();
 
-    // No.
+    // ① No.
     ctx.fillStyle='rgba(180,190,220,.4)'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(idx+1, 14+15, cy+5);
+    ctx.fillText(idx+1, C.no.x+C.no.w/2, cy+5);
 
-    // 종류 뱃지
+    // ② 종류 뱃지
     const tc=tagColors[item.type]||'#64748b';
-    ctx.fillStyle=tc+'33'; imgRoundRect(ctx,52,cy-12,50,22,5,true);
+    ctx.fillStyle=tc+'33'; imgRoundRect(ctx,C.type.x,cy-12,52,22,5,true);
     ctx.fillStyle=tc; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(item.type||'-',52+25,cy+4);
+    ctx.fillText(item.type||'-',C.type.x+26,cy+4);
 
-    // 매물명
+    // ③ 매물명
     ctx.fillStyle='#e8eeff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='left';
-    ctx.fillText(imgClipText(ctx,item.name||'-',175),118,cy-3);
+    ctx.fillText(imgClipText(ctx,item.name||'-',C.name.w-4),C.name.x,cy+4);
+
+    // ④ 주소 + 층수 (번지 포함 전체 주소)
+    const fullAddr=`${item.prov||''}${item.area?' '+item.area:''}${item.dong?' '+item.dong:''}`.trim();
+    ctx.fillStyle='rgba(180,195,225,.75)'; ctx.font='12px sans-serif'; ctx.textAlign='left';
+    ctx.fillText(imgClipText(ctx,fullAddr,C.addr.w-4),C.addr.x,cy-6);
     if(item.floor){
-      ctx.fillStyle='rgba(150,165,200,.5)'; ctx.font='10px sans-serif';
-      ctx.fillText(item.floor+'층',118,cy+13);
+      ctx.fillStyle='rgba(79,140,255,.8)'; ctx.font='bold 11px sans-serif';
+      ctx.fillText(item.floor+'층',C.addr.x,cy+10);
     }
 
-    // 위치
-    ctx.fillStyle='rgba(160,175,210,.65)'; ctx.font='12px sans-serif';
-    ctx.fillText(imgClipText(ctx,maskAddr(item),155),308,cy+4);
-
-    // 거래 뱃지
+    // ⑤ 거래 뱃지
     ctx.fillStyle=dealBg[item.deal]||'rgba(255,255,255,.08)';
-    imgRoundRect(ctx,476,cy-12,44,22,5,true);
+    imgRoundRect(ctx,C.deal.x,cy-12,C.deal.w,22,5,true);
     ctx.fillStyle=dealColor[item.deal]||'#94a3b8';
     ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(item.deal||'-',476+22,cy+4);
+    ctx.fillText(item.deal||'-',C.deal.x+C.deal.w/2,cy+4);
 
-    // 가격
+    // ⑥ 가격 (임대: 보증금/권리금/월세/합금액  |  매매: 매매가/권리금)
     ctx.textAlign='left';
     if(isRent){
-      ctx.fillStyle='#93c5fd'; ctx.font='11px sans-serif';
-      ctx.fillText('보증금 '+won(item.deposit||0),534,cy-8);
-      ctx.fillStyle='#f0f2ff'; ctx.font='bold 13px sans-serif';
-      ctx.fillText('월 '+won((item.monthly||0)+(item.maintenance||0)),534,cy+8);
-      if((item.maintenance||0)>0){
-        ctx.fillStyle='rgba(160,175,210,.5)'; ctx.font='10px sans-serif';
-        ctx.fillText('(월세+관리비)',534,cy+21);
+      const dep=item.deposit||0, mon=item.monthly||0, mnt=item.maintenance||0;
+      const total=mon+mnt;
+      // 보증금
+      ctx.fillStyle='rgba(147,197,253,.7)'; ctx.font='11px sans-serif';
+      ctx.fillText('보증금',C.price.x, py+14);
+      ctx.fillStyle='#e0eaff'; ctx.font='bold 12px sans-serif';
+      ctx.fillText(won(dep), C.price.x+44, py+14);
+      // 권리금
+      ctx.fillStyle='rgba(167,139,250,.7)'; ctx.font='11px sans-serif';
+      ctx.fillText('권리금', C.price.x+140, py+14);
+      ctx.fillStyle='#ddd6fe'; ctx.font='bold 12px sans-serif';
+      ctx.fillText(km>0?won(km):'없음', C.price.x+184, py+14);
+      // 월세
+      ctx.fillStyle='rgba(147,197,253,.7)'; ctx.font='11px sans-serif';
+      ctx.fillText('월  세', C.price.x, py+32);
+      ctx.fillStyle='#fde68a'; ctx.font='bold 12px sans-serif';
+      ctx.fillText(won(mon)+'/월', C.price.x+44, py+32);
+      // 합금액 (하이라이트)
+      ctx.fillStyle='rgba(251,191,36,.18)';
+      imgRoundRect(ctx,C.price.x+130,py+20,C.price.w-134,22,4,true);
+      ctx.fillStyle='#fbbf24'; ctx.font='11px sans-serif';
+      ctx.fillText('합금액', C.price.x+136, py+34);
+      ctx.fillStyle='#fff'; ctx.font='bold 13px sans-serif';
+      ctx.fillText(won(total)+'/월', C.price.x+178, py+34);
+      // 관리비 주석
+      if(mnt>0){
+        ctx.fillStyle='rgba(160,175,210,.45)'; ctx.font='10px sans-serif';
+        ctx.fillText('(월세'+won(mon)+'+관리비'+won(mnt)+')', C.price.x, py+50);
       }
     } else {
-      ctx.fillStyle='#93c5fd'; ctx.font='11px sans-serif';
-      ctx.fillText('매매 '+won(item.price||0),534,cy-8);
+      // 매매가
+      ctx.fillStyle='rgba(147,197,253,.7)'; ctx.font='11px sans-serif';
+      ctx.fillText('매매가', C.price.x, cy-6);
+      ctx.fillStyle='#93c5fd'; ctx.font='bold 15px sans-serif';
+      ctx.fillText(won(item.price||0), C.price.x+46, cy-6);
+      // 권리금
       if(km>0){
-        ctx.fillStyle='rgba(160,175,210,.6)'; ctx.font='11px sans-serif';
-        ctx.fillText('권리금 '+won(km),534,cy+8);
+        ctx.fillStyle='rgba(167,139,250,.7)'; ctx.font='11px sans-serif';
+        ctx.fillText('권리금', C.price.x, cy+12);
+        ctx.fillStyle='#ddd6fe'; ctx.font='bold 13px sans-serif';
+        ctx.fillText(won(km), C.price.x+46, cy+12);
       }
     }
 
-    // 규모
+    // ⑦ 규모
     ctx.fillStyle='#cbd5e1'; ctx.font='12px sans-serif'; ctx.textAlign='left';
     const rms=item.rooms?item.rooms+'실':'';
     const ar=item.area2?item.area2+'㎡':'';
-    ctx.fillText((rms+(rms&&ar?' / ':'')+ar)||'-',730,cy-3);
+    ctx.fillText((rms+(rms&&ar?' ':'')+ar)||'-',C.size.x,cy-4);
     if(item.year){
       ctx.fillStyle='rgba(150,165,200,.5)'; ctx.font='10px sans-serif';
-      ctx.fillText(item.year+'년',730,cy+13);
+      ctx.fillText(item.year+'년 준공',C.size.x,cy+10);
     }
 
-    // 수익률
+    // ⑧ 수익률
     const annualRev=isRent?((item.monthly||0)+(item.maintenance||0))*12:0;
     const invBase=isRent?(item.deposit||0)+km:(item.price||0)+km;
     if(invBase>0&&annualRev>0){
       const yr=(annualRev/invBase*100).toFixed(1);
       const yc=parseFloat(yr)>=10?'#34d399':parseFloat(yr)>=7?'#fbbf24':'#f87171';
-      ctx.fillStyle=yc+'22'; imgRoundRect(ctx,826,cy-16,68,30,6,true);
-      ctx.fillStyle=yc; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
-      ctx.fillText(yr+'%',826+34,cy+5);
+      ctx.fillStyle=yc+'22'; imgRoundRect(ctx,C.rate.x,cy-18,C.rate.w,34,6,true);
+      ctx.fillStyle=yc; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(yr+'%',C.rate.x+C.rate.w/2,cy+6);
     } else {
       ctx.fillStyle='rgba(150,165,200,.3)'; ctx.font='12px sans-serif'; ctx.textAlign='center';
-      ctx.fillText('-',826+34,cy+5);
+      ctx.fillText('-',C.rate.x+C.rate.w/2,cy+5);
     }
   });
 
