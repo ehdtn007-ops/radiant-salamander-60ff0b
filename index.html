@@ -8,6 +8,7 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <!-- 카카오 공유 -->
 <!-- 카카오 공유 SDK 제거됨 -->
 <script>
@@ -21,6 +22,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
@@ -4211,6 +4213,14 @@ function hideLoading(){const el=document.getElementById('fb-loading');if(el)el.r
 
 async function loadFromFirebase(){
   try{
+    setProgress(10);
+
+    // ── Firebase 익명 인증 (Firestore 접근 권한 확보) ──
+    if(!auth.currentUser){
+      await auth.signInAnonymously();
+      console.log('Firebase 익명 인증 성공');
+    }
+
     setProgress(20);
     // 1. 마스터 계정 항상 포함
     users = [{id:'master',pw:'master123',name:'마스터관리자',phone:'02-0000-0000',license:'',role:'master',status:'active',listings:[]}];
@@ -4241,7 +4251,13 @@ async function loadFromFirebase(){
     setProgress(100);
     hideLoading();
   } catch(e){
-    console.error('Firebase 로드 실패, 로컬 데이터로 실행:', e);
+    console.error('Firebase 로드 실패:', e);
+    // 인증 실패 vs DB 실패 구분 안내
+    if(e.code && e.code.indexOf('auth')>=0){
+      console.error('⚠️ Firebase 익명 인증이 활성화되지 않았습니다. Firebase 콘솔 → Authentication → Sign-in method에서 "Anonymous(익명)" 를 활성화하세요.');
+    } else if(e.code === 'permission-denied'){
+      console.error('⚠️ Firestore 보안 규칙에서 접근이 거부되었습니다. Firebase 콘솔 → Firestore → Rules에서 규칙을 확인하세요.');
+    }
     // Firebase 연결 실패 시 기본 데이터로 폴백
     users = [
       {id:'master',pw:'master123',name:'마스터관리자',phone:'02-0000-0000',license:'',role:'master',status:'active',listings:[]},
