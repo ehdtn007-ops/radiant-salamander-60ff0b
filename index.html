@@ -2131,6 +2131,24 @@ function showPopup(item){
     descEl.textContent='등록된 특징 설명이 없습니다.';
     descEl.style.color='var(--text3)';
   }
+  // ── 비밀 메모 (로그인 회원만) ──
+  const memoBlockId='dp-memo-block';
+  let memoBlock=document.getElementById(memoBlockId);
+  if(!memoBlock){
+    memoBlock=document.createElement('div');
+    memoBlock.id=memoBlockId;
+    descBlock.parentNode.insertBefore(memoBlock,descBlock.nextSibling);
+  }
+  if(currentUser&&item.memo&&item.memo.trim()){
+    memoBlock.style.display='block';
+    memoBlock.innerHTML=`<div style="padding:12px 18px;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.5px;margin-bottom:6px">🔒 비밀 메모 <span style="font-size:10px;font-weight:400;color:var(--text2)">(직원 공개)</span></div>
+      <div style="font-size:13px;color:#fde68a;line-height:1.75;white-space:pre-wrap;word-break:break-word;padding:10px 12px;background:rgba(251,191,36,.06);border:1px dashed rgba(251,191,36,.3);border-radius:8px">${item.memo}</div>
+    </div>`;
+  } else {
+    memoBlock.style.display='none';
+    memoBlock.innerHTML='';
+  }
 
   // ── 상세 정보 ──
   document.getElementById('dp-info-block').innerHTML=`
