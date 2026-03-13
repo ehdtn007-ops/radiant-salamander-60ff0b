@@ -725,6 +725,21 @@ select:hover,select:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<!-- ═══ 회원 매물 관리 모달 ═══ -->
+<div class="overlay hidden" id="ov-mylistings">
+  <div class="modal modal-xl">
+    <button class="modal-close" onclick="closeAll()">✕</button>
+    <div class="modal-title">📋 내 매물 관리</div>
+    <div class="modal-sub">등록한 매물을 수정·삭제할 수 있습니다</div>
+    <div class="atabs">
+      <div class="atab active" onclick="myTab('mylist')">🏠 내 매물</div>
+      <div class="atab" onclick="myTab('myprofile')">👤 내 정보 변경</div>
+    </div>
+    <div class="asec active" id="ms-mylist"></div>
+    <div class="asec" id="ms-myprofile"></div>
+  </div>
+</div>
+
 <!-- ═══ 관리자 모달 ═══ -->
 <div class="overlay hidden" id="ov-admin">
   <div class="modal modal-xl">
@@ -1107,6 +1122,20 @@ window.addEventListener('popstate',(e)=>{
   // 오버레이 모달 (로그인/회원가입 등)
   const openModal=document.querySelector('.overlay:not(.hidden)');
   if(openModal){openModal.classList.add('hidden');return;}
+});
+// ═══ ESC 키로 팝업/모달 닫기 ═══
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  // 1) 게시판 상세 모달
+  const bdOverlay=document.getElementById('bd-overlay');
+  if(bdOverlay){closeBoardDetail();return;}
+  // 2) 지도 매물 상세 팝업
+  if(document.getElementById('dpop').classList.contains('show')){closePopup();return;}
+  // 3) 클러스터 팝업
+  if(typeof clusterOverlay!=='undefined'&&clusterOverlay){closeClusterPopup();render();return;}
+  // 4) 오버레이 모달 (로그인/회원가입/관리자 등)
+  const openOv=document.querySelector('.overlay:not(.hidden)');
+  if(openOv){openOv.classList.add('hidden');return;}
 });
 // ════════════════════════════════════════════
 // 전국 지역 데이터
@@ -2265,7 +2294,7 @@ function renderHeader(){
     el.innerHTML=`
       ${(!isMaster&&!isPending)?`<button class="hbtn" onclick="openAllListings()" style="background:rgba(79,140,255,.18);color:#7eb3ff;border:1px solid rgba(79,140,255,.3)">📋 전체 매물</button><button class="hbtn accent" onclick="openListing()">+ 매물 등록</button>`:''}
       ${isMaster?`<button class="hbtn" onclick="openAllListings()" style="background:rgba(79,140,255,.18);color:#7eb3ff;border:1px solid rgba(79,140,255,.3)">📋 전체 매물</button>`:''}
-      <div class="uchip" onclick="${isMaster?'openAdmin()':''}">
+      <div class="uchip" onclick="${isMaster?'openAdmin()':'openMyListings()'}">
         <div class="uavatar ${isMaster?'master':''}">${currentUser.name[0]}</div>
         <span>${currentUser.name}</span>
         ${isMaster?'<span style="font-size:10px;margin-left:2px">⚙️</span>':''}
@@ -2434,8 +2463,158 @@ function doAddListing(){
 function openAdmin(){if(!currentUser||currentUser.role!=='master')return;show('ov-admin');renderAMembers();}
 
 // ════════════════════════════════════════════
-// 전체 매물 목록 (회원 공용)
+// 회원 매물 관리 패널
 // ════════════════════════════════════════════
+function openMyListings(){
+  if(!currentUser||currentUser.role==='master')return;
+  show('ov-mylistings');
+  renderMyListings();
+}
+function myTab(t){
+  const tabs=['mylist','myprofile'];
+  document.querySelectorAll('#ov-mylistings .atab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('#ov-mylistings .asec').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  if(t==='mylist') renderMyListings();
+  else if(t==='myprofile') renderMyProfile();
+}
+function renderMyListings(){
+  const el=document.getElementById('ms-mylist');
+  if(!el||!currentUser)return;
+  const u=users.find(x=>x.id===currentUser.id);
+  const myItems=(u&&u.listings)?u.listings:[];
+
+  if(!myItems.length){
+    el.innerHTML='<div style="color:var(--text2);padding:40px;text-align:center;font-size:14px">📭 등록한 매물이 없습니다.<br><span style="font-size:12px;margin-top:8px;display:inline-block">상단의 <b>+ 매물 등록</b> 버튼으로 매물을 등록해보세요.</span></div>';
+    return;
+  }
+
+  el.innerHTML=`
+  <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${myItems.length}</b>건</div>
+  <div style="overflow-x:auto">
+  <table class="atable" style="min-width:700px">
+    <thead><tr>
+      <th>종류</th><th>거래</th><th>매물명</th><th>위치</th><th>가격</th><th>등록일</th><th>관리</th>
+    </tr></thead>
+    <tbody>${myItems.map(item=>{
+      const regDate=item.registeredAt?new Date(item.registeredAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}).replace('. ','/').replace('.',''):'-';
+      return `<tr>
+        <td><span class="dtag ${item.type}" style="font-size:10px">${item.type}</span></td>
+        <td><span class="dtag ${item.deal}" style="font-size:10px">${item.deal}</span></td>
+        <td>
+          <div style="font-weight:600;font-size:12px">${item.name}</div>
+          ${item.memo?`<div style="margin-top:3px;padding:3px 7px;background:rgba(251,191,36,.08);border-left:2px solid rgba(251,191,36,.5);border-radius:0 6px 6px 0;font-size:10px;color:#fbbf24;line-height:1.4;white-space:pre-wrap;word-break:break-all">🔒 ${item.memo}</div>`:''}
+        </td>
+        <td style="color:var(--text2);font-size:11px">${item.prov} ${item.area} ${item.dong||''}</td>
+        <td style="font-size:11px">${item.deal==='월세'?`보 ${item.deposit||0} / 월 ${item.monthly||0}`:`${item.price||0}만`}${item.keymoney?` <span style="color:var(--red)">+권${item.keymoney}</span>`:''}</td>
+        <td style="font-size:11px;color:var(--text2)">${regDate}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="openMyEditListing('${item.lid}')">✏️수정</button>
+          <button class="btn btn-sm btn-red" onclick="delMyListing('${item.lid}')">삭제</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function openMyEditListing(lid){
+  if(!currentUser)return;
+  const u=users.find(x=>x.id===currentUser.id);
+  if(!u||!u.listings)return;
+  const item=u.listings.find(l=>l.lid===lid);
+  if(!item)return;
+  activePopupItem={...item,ownerId:currentUser.id};
+  openEditListing();
+}
+function delMyListing(lid){
+  if(!confirm('이 매물을 삭제하시겠습니까?'))return;
+  const u=users.find(x=>x.id===currentUser.id);
+  if(!u||!u.listings)return;
+  u.listings=u.listings.filter(l=>l.lid!==lid);
+  db.collection('users').doc(u.id).set(u).then(()=>{
+    renderMyListings();render();
+  }).catch(e=>{console.error('매물 삭제 실패:',e);alert('삭제 실패. 다시 시도해주세요.');});
+}
+function renderMyProfile(){
+  const el=document.getElementById('ms-myprofile');
+  if(!el||!currentUser)return;
+  const u=currentUser;
+  el.innerHTML=`
+  <div style="padding:8px 0;max-width:480px">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px">👤 기본 정보 변경</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">아이디</label>
+          <input class="fi" value="${u.id}" disabled style="width:100%;margin-top:4px;opacity:.5">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">이름</label>
+          <input id="my-pf-name" class="fi" value="${u.name||''}" placeholder="이름" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">전화번호</label>
+          <input id="my-pf-phone" class="fi" value="${u.phone||''}" placeholder="전화번호" style="width:100%;margin-top:4px">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveMyProfileInfo()" style="margin-top:14px;width:100%">💾 기본 정보 저장</button>
+      <div id="my-pf-info-msg" style="font-size:12px;margin-top:8px;text-align:center"></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px">🔒 비밀번호 변경</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">현재 비밀번호</label>
+          <input id="my-pf-pw-cur" class="fi" type="password" placeholder="현재 비밀번호" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">새 비밀번호</label>
+          <input id="my-pf-pw-new" class="fi" type="password" placeholder="새 비밀번호 (6자 이상)" style="width:100%;margin-top:4px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);font-weight:600">새 비밀번호 확인</label>
+          <input id="my-pf-pw-new2" class="fi" type="password" placeholder="새 비밀번호 재입력" style="width:100%;margin-top:4px">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveMyProfilePw()" style="margin-top:14px;width:100%">🔑 비밀번호 변경</button>
+      <div id="my-pf-pw-msg" style="font-size:12px;margin-top:8px;text-align:center"></div>
+    </div>
+  </div>`;
+}
+function saveMyProfileInfo(){
+  const name=document.getElementById('my-pf-name').value.trim();
+  const phone=document.getElementById('my-pf-phone').value.trim();
+  const msg=document.getElementById('my-pf-info-msg');
+  if(!name){msg.style.color='var(--red)';msg.textContent='이름을 입력해주세요.';return;}
+  currentUser.name=name;currentUser.phone=phone;
+  const uIdx=users.findIndex(u=>u.id===currentUser.id);
+  if(uIdx>=0){users[uIdx].name=name;users[uIdx].phone=phone;}
+  db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
+    msg.style.color='var(--green)';msg.textContent='✅ 저장됐습니다!';
+    renderHeader();
+    setTimeout(()=>{msg.textContent='';},2500);
+  }).catch(()=>{msg.style.color='var(--red)';msg.textContent='저장 실패. 다시 시도해주세요.';});
+}
+function saveMyProfilePw(){
+  const cur=document.getElementById('my-pf-pw-cur').value;
+  const nw=document.getElementById('my-pf-pw-new').value;
+  const nw2=document.getElementById('my-pf-pw-new2').value;
+  const msg=document.getElementById('my-pf-pw-msg');
+  if(!cur||!nw||!nw2){msg.style.color='var(--red)';msg.textContent='모든 항목을 입력해주세요.';return;}
+  if(cur!==currentUser.pw){msg.style.color='var(--red)';msg.textContent='현재 비밀번호가 틀렸습니다.';return;}
+  if(nw.length<6){msg.style.color='var(--red)';msg.textContent='새 비밀번호는 6자 이상이어야 합니다.';return;}
+  if(nw!==nw2){msg.style.color='var(--red)';msg.textContent='새 비밀번호가 일치하지 않습니다.';return;}
+  currentUser.pw=nw;
+  const uPwIdx=users.findIndex(u=>u.id===currentUser.id);
+  if(uPwIdx>=0)users[uPwIdx].pw=nw;
+  localStorage.setItem('sessionUserPw',nw);
+  db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
+    msg.style.color='var(--green)';msg.textContent='✅ 비밀번호가 변경됐습니다!';
+    document.getElementById('my-pf-pw-cur').value='';
+    document.getElementById('my-pf-pw-new').value='';
+    document.getElementById('my-pf-pw-new2').value='';
+    setTimeout(()=>{msg.textContent='';},2500);
+  }).catch(()=>{msg.style.color='var(--red)';msg.textContent='변경 실패. 다시 시도해주세요.';});
+}
 function openAllListings(){
   if(!currentUser){show('ov-login');return;}
   show('ov-all-listings');
