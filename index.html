@@ -1289,8 +1289,9 @@ function pinTypeTag(item){
 }
 // 공개 주소: 동까지만 표시 (번지/상세주소 비공개)
 function maskAddr(item){
-  // 비로그인: 동까지만
-  return `${item.prov||'서울'} ${item.area||''} ${item.dong||''}`.trim();
+  // 비로그인: 동까지만 (번지 제거)
+  const dong=(item.dong||'').replace(/\s*\d+.*$/,'').trim();
+  return `${item.prov||'서울'} ${item.area||''} ${dong}`.trim();
 }
 function fullAddr(item){
   // 로그인: 동 + 번지까지
@@ -1662,7 +1663,7 @@ function showBoardDetail(item){
             <span class="dtag ${item.deal}">${item.deal}</span>
           </div>
           <div class="dpop-name">${item.name}</div>
-          <div class="dpop-addr">📍 ${maskAddr(item)}</div>
+          <div class="dpop-addr">📍 ${currentUser?fullAddr(item):maskAddr(item)}</div>
         </div>
         <!-- 가격 -->
         <div class="dpop-price-block">${priceHtml}</div>
@@ -1808,7 +1809,7 @@ function render(){
         <div class="cname">${item.name}</div>
         ${isRent&&monthlySum>0?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합금액 ${won(monthlySum)}/월 <span style="font-size:10px;opacity:.7">(월세+관리비)</span></div>`:''}
         <div class="cmeta">
-          <span>📍 ${maskAddr(item)}</span>
+          <span>📍 ${currentUser?fullAddr(item):maskAddr(item)}</span>
           <span>🚪 ${item.rooms||'-'}실</span>
           ${item.area2?`<span>📐 ${item.area2}㎡</span>`:''}
           <span>🏢 ${item.floor||'-'}층</span>
@@ -2049,7 +2050,7 @@ function renderFavList(){
       <div class="ctop"><div style="display:flex;gap:4px"><span class="dtag ${item.type}">${item.type}</span><span class="dtag ${item.deal}">${item.deal}</span></div><span class="cprice">${isRent?`보${wonShort(item.deposit)}/월${wonShort(item.monthly||0)}`:wonShort(item.price)}</span></div>
       <div class="cname">${item.name}</div>
       ${isRent?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합계 ${won(tot)} <span style="font-size:10px;opacity:.7">(보증금+권리금)</span></div>`:''}
-      <div class="cmeta"><span>📍 ${maskAddr(item)}</span><span>🚪 ${item.rooms||'-'}실</span></div>`;
+      <div class="cmeta"><span>📍 ${currentUser?fullAddr(item):maskAddr(item)}</span><span>🚪 ${item.rooms||'-'}실</span></div>`;
     c.addEventListener('click',()=>{
       activeId=item.lid;activePopupItem=item;render();showPopup(item);
       getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));},item.lid);
@@ -2170,7 +2171,7 @@ function showPopup(item){
       <div class="info-cell"><div class="info-lbl">사용승인일</div><div class="info-val">${item.approvedate||'-'}</div></div>
       <div class="info-cell"><div class="info-lbl">입주가능일</div><div class="info-val">${item.movein||'협의'}</div></div>
       <div class="info-cell wide2"><div class="info-lbl">위반건축물</div><div class="info-val" style="${(item.illegal==='위반건축물')?'color:var(--red)':''}">${item.illegal||'해당없음'}</div></div>
-      <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${maskAddr(item)}</div></div>
+      <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${currentUser?fullAddr(item):maskAddr(item)}</div></div>
     </div>`;
 
   // ── 담당자 칸
