@@ -786,6 +786,7 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="fr hidden" id="el-rent-row">
       <div class="fg"><label class="fl">보증금 (만원)</label><input class="fi" id="eldeposit" type="number"></div>
       <div class="fg"><label class="fl">월세 (만원)</label><input class="fi" id="elmonthly" type="number"></div>
+      <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="elmaintenance" type="number"></div>
     </div>
     <div class="fg hidden" id="el-keymoney-rent-row">
       <label class="fl">권리금 (만원)</label><input class="fi" id="elkeymoney2" type="number">
@@ -809,7 +810,6 @@ select:hover,select:focus{border-color:var(--accent)}
       </div>
       <div class="fg"><label class="fl">주차대수</label><input class="fi" id="elparking" type="number"></div>
     </div>
-    <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="elmaintenance" type="number"></div>
     <div class="fr">
       <div class="fg"><label class="fl">준공연도</label><input class="fi" id="elyear" type="number"></div>
       <div class="fg"><label class="fl">사용승인일</label><input class="fi" id="elapprovedate" type="date"></div>
@@ -1233,7 +1233,16 @@ function pinTypeTag(item){
   return `<span class="pin-kind-tag ${pc}">${label}</span>`;
 }
 // 공개 주소: 동까지만 표시 (번지/상세주소 비공개)
-function maskAddr(item){return `${item.prov||'서울'} ${item.area||''} ${item.dong||''}`.trim();}
+function maskAddr(item){
+  // 비로그인: 동까지만
+  return `${item.prov||'서울'} ${item.area||''} ${item.dong||''}`.trim();
+}
+function fullAddr(item){
+  // 로그인: 동 + 번지까지
+  const base=`${item.prov||'서울'} ${item.area||''} ${item.dong||''}`.trim();
+  const jibun=item.jibun||'';
+  return jibun?`${base} ${jibun}`:base;
+}
 
 // ════════════════════════════════════════════
 // 카카오맵 (level 4)
@@ -1530,7 +1539,7 @@ function renderBoard(){
         <div class="bcard-date">${fmtDateAgo(item.registeredAt)}</div>
       </div>
       <div class="bcard-name">${item.name}</div>
-      <div class="bcard-addr">📍 ${maskAddr(item)}</div>
+      <div class="bcard-addr">📍 ${currentUser?fullAddr(item):maskAddr(item)}</div>
       <div class="bcard-price">${isRent?`보증금 ${won(item.deposit||0)} / 월 ${won(item.monthly||0)}`:won(item.price||0)}</div>
       ${isRent?`<div class="bcard-total">합계 ${won(tot)} <span style="font-size:10px;opacity:.7">(보증금+권리금)</span></div>`:''}
       <div class="bcard-meta">
@@ -1618,7 +1627,7 @@ function showBoardDetail(item){
             <div class="info-cell"><div class="info-lbl">사용승인일</div><div class="info-val">${item.approvedate||'-'}</div></div>
             <div class="info-cell"><div class="info-lbl">입주가능일</div><div class="info-val">${item.movein||'협의'}</div></div>
             <div class="info-cell wide2"><div class="info-lbl">위반건축물</div><div class="info-val" style="${item.illegal==='위반건축물'?'color:var(--red)':''}">${item.illegal||'해당없음'}</div></div>
-            <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${maskAddr(item)}</div></div>
+            <div class="info-cell wide"><div class="info-lbl">소재지</div><div class="info-val" style="font-size:10px;white-space:normal">${currentUser?fullAddr(item):maskAddr(item)}</div></div>
           </div>
         </div>
         <!-- 담당자 -->
@@ -2007,7 +2016,7 @@ function showPopup(item){
 
   // 이름 + 주소
   document.getElementById('dp-name').textContent=item.name;
-  document.getElementById('dp-addr').innerHTML=`📍 ${maskAddr(item)}${item.floor?' <span style="font-size:11px;font-weight:700;color:var(--text2);background:rgba(255,255,255,.07);padding:2px 7px;border-radius:8px;border:1px solid var(--border2);margin-left:4px">'+item.floor+'층</span>':''}`;
+  document.getElementById('dp-addr').innerHTML=`📍 ${currentUser?fullAddr(item):maskAddr(item)}${item.floor?' <span style="font-size:11px;font-weight:700;color:var(--text2);background:rgba(255,255,255,.07);padding:2px 7px;border-radius:8px;border:1px solid var(--border2);margin-left:4px">'+item.floor+'층</span>':''}`;
 
   // 찜 버튼
   const favBtn=document.getElementById('dpop-fav');
@@ -2044,24 +2053,12 @@ function showPopup(item){
         </div>
       </div>`;
   } else {
-    const price=item.price||0,tot=price+km;
+    const price=item.price||0;
     priceHtml=`
-      <div class="price-grid">
-        <div class="price-cell">
+      <div class="price-grid" style="grid-template-columns:1fr">
+        <div class="price-cell full highlight" style="text-align:center;padding:18px">
           <div class="price-label">매매가</div>
-          <div class="price-value accent">${won(price)}</div>
-        </div>
-        <div class="price-cell">
-          <div class="price-label">관리비 (월)</div>
-          <div class="price-value">${item.maintenance?won(item.maintenance):'-'}</div>
-        </div>
-        <div class="price-cell">
-          <div class="price-label">권리금</div>
-          <div class="price-value">${km>0?won(km):'없음'}</div>
-        </div>
-        <div class="price-cell full highlight">
-          <div class="price-label">합계금액 (매매가 + 권리금)</div>
-          <div class="price-value red">${won(tot)}</div>
+          <div class="price-value accent" style="font-size:28px;font-weight:900;margin-top:4px">${won(price)}</div>
         </div>
       </div>`;
   }
@@ -2327,13 +2324,14 @@ function doAddListing(){
   const deal=document.getElementById('ldeal').value,isRent=deal==='월세';
   const prov=document.getElementById('lprov').value,area=document.getElementById('larea').value;
   const dongSel=document.getElementById('ldong-sel').value,dongManual=document.getElementById('ldong').value.trim();
-  const dong=dongManual||dongSel||'';
+  const dong=dongSel||'';
+  const jibun=dongManual||'';
   const km=isRent?parseFloat(document.getElementById('lkeymoney2').value)||0:parseFloat(document.getElementById('lkeymoney').value)||0;
   const lst={
     lid:'u'+Date.now(),
     type:document.getElementById('ltype').value,
     gsType:document.getElementById('ltype').value==='고시원'?(document.getElementById('lgstype').value||''):'',
-    deal,name,prov,area,dong,
+    deal,name,prov,area,dong,jibun,
     bldgdong:document.getElementById('lbldgdong').value.trim()||'',
     hosu:document.getElementById('lhosu').value.trim()||'',
     price:isRent?0:parseFloat(document.getElementById('lprice').value)||0,
@@ -2439,7 +2437,7 @@ function renderAllListings(){
             <div style="font-weight:700;font-size:13px;color:#e8eeff">${item.name||'-'}</div>
             ${item.floor?`<div style="font-size:11px;color:rgba(150,165,200,.6)">${item.floor}층</div>`:''}
           </td>
-          <td style="font-size:12px;color:rgba(160,175,210,.7)">${maskAddr(item)}</td>
+          <td style="font-size:12px;color:rgba(160,175,210,.7)">${fullAddr(item)}</td>
           <td style="font-size:12px">${priceStr}</td>
           <td style="font-size:12px;color:#cbd5e1">
             ${item.rooms?item.rooms+'실':''}${item.rooms&&item.area2?' / ':''}${item.area2?item.area2+'㎡':''}
@@ -2882,9 +2880,9 @@ function drawListingTable(canvas, items){
     ctx.fillText(imgClipText(ctx,item.name||'-',C.name.w-4),C.name.x,cy+4);
 
     // ④ 주소 + 층수 (번지 포함 전체 주소)
-    const fullAddr=`${item.prov||''}${item.area?' '+item.area:''}${item.dong?' '+item.dong:''}`.trim();
+    const imgAddr=(()=>{const b=`${item.prov||''} ${item.area||''} ${item.dong||''}`.trim();const j=item.jibun||'';return j?`${b} ${j}`:b;})();
     ctx.fillStyle='rgba(180,195,225,.75)'; ctx.font='12px sans-serif'; ctx.textAlign='left';
-    ctx.fillText(imgClipText(ctx,fullAddr,C.addr.w-4),C.addr.x,cy-6);
+    ctx.fillText(imgClipText(ctx,imgAddr,C.addr.w-4),C.addr.x,cy-6);
     if(item.floor){
       ctx.fillStyle='rgba(79,140,255,.8)'; ctx.font='bold 11px sans-serif';
       ctx.fillText(item.floor+'층',C.addr.x,cy+10);
@@ -3436,6 +3434,28 @@ async function fetchBldgInfo(prefix='el'){
       }catch(e2){
         if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
       }
+    } else if(floorInput && /^\d+$/.test(floorInput)){
+      // 단일 층: 층별 면적 API 조회
+      const singleFloor=parseInt(floorInput);
+      try{
+        const baseUrl2=`https://apis.data.go.kr/1613000/BldRgstHubService`;
+        const commonParam2=`?serviceKey=${encodeURIComponent(apiKey)}&sigunguCd=${sigunguCd}&bjdongCd=${bjdongCd}&bun=${bun}&ji=${ji}&numOfRows=30&pageNo=1&_type=json`;
+        const resF=await fetch(baseUrl2+'/getBrFlrOulnInfo'+commonParam2);
+        const jsonF=await resF.json();
+        const flrItems=jsonF?.response?.body?.items?.item;
+        const flrList=Array.isArray(flrItems)?flrItems:(flrItems?[flrItems]:[]);
+        const matched=flrList.filter(fi=>parseInt(fi.flrNo)===singleFloor||fi.flrNoNm===(singleFloor+'층'));
+        let sumArea=0;
+        matched.forEach(fi=>{sumArea+=parseFloat(fi.area||fi.atchArea||0);});
+        if(sumArea>0){
+          floorArea=Math.round(sumArea);
+          set(p+'area2',floorArea);
+        } else if(d.totArea){
+          set(p+'area2',Math.round(parseFloat(d.totArea)));
+        }
+      }catch(e2){
+        if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
+      }
     } else {
       if(d.totArea)set(p+'area2',Math.round(parseFloat(d.totArea)));
     }
@@ -3444,12 +3464,12 @@ async function fetchBldgInfo(prefix='el'){
 
     const parking2=(parseInt(d.indrMechUtcnt||0)+parseInt(d.indrAutoUtcnt||0)
                    +parseInt(d.oudrMechUtcnt||0)+parseInt(d.oudrAutoUtcnt||0));
-    const displayArea=floorArea!=null?floorArea+'㎡ (층별합산)': (d.totArea?Math.round(d.totArea)+'㎡':'-');
+    const displayArea=floorArea!=null?floorArea+'㎡ (해당층 합산)': (d.totArea?Math.round(d.totArea)+'㎡ (연면적)':'-');
     const rows=[
       ['구분', isApt?'🏢 집합건물':'🏠 일반건축물'],
       ['건물명',d.bldNm||'-'],
       ['주용도',d.mainPurpsCdNm||'-'],
-      ['연면적',displayArea],
+      ['해당층 면적',displayArea],
       ['총층수',d.grndFlrCnt?d.grndFlrCnt+'층':'-'],
       ['사용승인일',d.useAprDay&&d.useAprDay.length>=8
         ?`${d.useAprDay.substring(0,4)}-${d.useAprDay.substring(4,6)}-${d.useAprDay.substring(6,8)}`:'-'],
@@ -3501,7 +3521,7 @@ function openEditListing(){
   set('eltype',item.type);
   set('eldeal',item.deal);
   set('elname',item.name);
-  set('eldong',item.dong||'');
+  set('eldong',item.jibun||'');
   set('elprice',item.price||0);
   set('elkeymoney',item.keymoney||0);
   set('eldeposit',item.deposit||0);
@@ -3541,7 +3561,7 @@ function openEditListing(){
   updateDongList('el');
   setTimeout(()=>{
     const elDongSel=document.getElementById('eldong-sel');
-    if(elDongSel)elDongSel.value=item.dong||'';
+    if(elDongSel)elDongSel.value=item.dong||item.jibun||'';
   },80);
 
   // lid 저장
@@ -3571,7 +3591,8 @@ function doEditListing(){
     deal,name,
     prov:document.getElementById('elprov').value,
     area:document.getElementById('elarea').value,
-    dong:dongManual||dongSel||'',
+    dong:dongSel||'',
+    jibun:dongManual||'',
     bldgdong:document.getElementById('elbldgdong').value.trim()||'',
     hosu:document.getElementById('elhosu').value.trim()||'',
     price:isRent?0:parseFloat(document.getElementById('elprice').value)||0,
