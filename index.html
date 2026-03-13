@@ -562,7 +562,18 @@ select:hover,select:focus{border-color:var(--accent)}
         <input type="radio" name="l-btype" value="apt" onchange="toggleBldgType('l')" style="accent-color:var(--accent)"> 🏢 집합건물
       </label>
     </div>
-    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="ldong" placeholder="예: 397-5"><div style="margin-top:5px;font-size:11px;color:#f59e0b;display:flex;align-items:center;gap:4px">🔒 번지수는 공개되지 않으며 건축물대장 조회 용도로만 사용됩니다.</div></div>
+    <div class="fr" style="align-items:flex-start;gap:8px">
+      <div class="fg" style="flex:2">
+        <label class="fl">지번 (번지)</label>
+        <input class="fi" id="ldong" placeholder="예: 397-5">
+        <div style="margin-top:5px;font-size:11px;color:#f59e0b;display:flex;align-items:center;gap:4px">🔒 번지수는 공개되지 않으며 건축물대장 조회 용도로만 사용됩니다.</div>
+      </div>
+      <div class="fg" style="flex:1">
+        <label class="fl">해당 층수</label>
+        <input class="fi" id="lfloor" type="text" placeholder="예: 3 또는 3-5">
+        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식</div>
+      </div>
+    </div>
     <div class="fr hidden" id="l-apt-row">
       <div class="fg"><label class="fl">동</label><input class="fi" id="lbldgdong" placeholder="예: 101동 (없으면 공란)"></div>
       <div class="fg"><label class="fl">호수</label><input class="fi" id="lhosu" placeholder="예: 305호 (없으면 공란)"></div>
@@ -594,14 +605,9 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">면적 (㎡)</label><input class="fi" id="larea2" type="number" placeholder="예: 165.5"></div>
-      <div class="fg">
-        <label class="fl">해당 층수</label>
-        <input class="fi" id="lfloor" type="text" placeholder="예: 3 또는 3-5">
-        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식으로 입력 (건축물대장 면적 자동 합산)</div>
-      </div>
+      <div class="fg"><label class="fl">총 층수</label><input class="fi" id="ltotalfloor" type="number" placeholder="예: 5"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">총 층수</label><input class="fi" id="ltotalfloor" type="number" placeholder="예: 5"></div>
       <div class="fg"><label class="fl">방향</label>
         <select class="fi" id="ldirection">
           <option value="">선택</option>
@@ -609,11 +615,9 @@ select:hover,select:focus{border-color:var(--accent)}
           <option>남동향</option><option>남서향</option><option>북동향</option><option>북서향</option>
         </select>
       </div>
-    </div>
-    <div class="fr">
       <div class="fg"><label class="fl">주차대수</label><input class="fi" id="lparking" type="number" placeholder="예: 10"></div>
-      <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="lmaintenance" type="number" placeholder="예: 50 (없으면 0)"></div>
     </div>
+    <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="lmaintenance" type="number" placeholder="예: 50 (없으면 0)"></div>
     <div class="fr">
       <div class="fg"><label class="fl">준공연도</label><input class="fi" id="lyear" type="number" placeholder="예: 2015"></div>
       <div class="fg"><label class="fl">사용승인일</label><input class="fi" id="lapprovedate" type="date"></div>
@@ -717,7 +721,17 @@ select:hover,select:focus{border-color:var(--accent)}
         <input type="radio" name="el-btype" value="apt" onchange="toggleBldgType('el')" style="accent-color:var(--accent)"> 🏢 집합건물
       </label>
     </div>
-    <div class="fg"><label class="fl">지번 (번지)</label><input class="fi" id="eldong" placeholder="예: 397-5  (건축물대장 조회용, 손님에게 미노출)"></div>
+    <div class="fr" style="align-items:flex-start;gap:8px">
+      <div class="fg" style="flex:2">
+        <label class="fl">지번 (번지)</label>
+        <input class="fi" id="eldong" placeholder="예: 397-5  (건축물대장 조회용, 손님에게 미노출)">
+      </div>
+      <div class="fg" style="flex:1">
+        <label class="fl">해당 층수</label>
+        <input class="fi" id="elfloor" type="text" placeholder="예: 3 또는 3-5">
+        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식</div>
+      </div>
+    </div>
     <div class="fr hidden" id="el-apt-row">
       <div class="fg"><label class="fl">동</label><input class="fi" id="elbldgdong" placeholder="예: 101동 (없으면 공란)"></div>
       <div class="fg"><label class="fl">호수</label><input class="fi" id="elhosu" placeholder="예: 305호 (없으면 공란)"></div>
@@ -747,14 +761,9 @@ select:hover,select:focus{border-color:var(--accent)}
     </div>
     <div class="fr">
       <div class="fg"><label class="fl">면적 (㎡)</label><input class="fi" id="elarea2" type="number"></div>
-      <div class="fg">
-        <label class="fl">해당 층수</label>
-        <input class="fi" id="elfloor" type="text" placeholder="예: 3 또는 3-5">
-        <div style="margin-top:4px;font-size:11px;color:var(--text2)">💡 복수 층은 <b style="color:var(--accent)">3-5</b> 형식으로 입력</div>
-      </div>
+      <div class="fg"><label class="fl">총 층수</label><input class="fi" id="eltotalfloor" type="number"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label class="fl">총 층수</label><input class="fi" id="eltotalfloor" type="number"></div>
       <div class="fg"><label class="fl">방향</label>
         <select class="fi" id="eldirection">
           <option value="">선택</option>
@@ -762,11 +771,9 @@ select:hover,select:focus{border-color:var(--accent)}
           <option>남동향</option><option>남서향</option><option>북동향</option><option>북서향</option>
         </select>
       </div>
-    </div>
-    <div class="fr">
       <div class="fg"><label class="fl">주차대수</label><input class="fi" id="elparking" type="number"></div>
-      <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="elmaintenance" type="number"></div>
     </div>
+    <div class="fg"><label class="fl">관리비 (만원/월)</label><input class="fi" id="elmaintenance" type="number"></div>
     <div class="fr">
       <div class="fg"><label class="fl">준공연도</label><input class="fi" id="elyear" type="number"></div>
       <div class="fg"><label class="fl">사용승인일</label><input class="fi" id="elapprovedate" type="date"></div>
@@ -1673,7 +1680,7 @@ function render(){
       c.className='card'+(activeId===item.lid?' active':'');
       c.id='card-'+item.lid;
       const isFav=favIds.includes(item.lid),isRent=item.deal==='월세';
-      const tot=isRent?(item.deposit||0)+(item.keymoney||0):0;
+      const monthlySum=isRent?((item.monthly||0)+(item.maintenance||0)):0;
       c.innerHTML=`
         <button class="card-fav ${isFav?'on':''}" onclick="event.stopPropagation();toggleFav('${item.lid}')">${isFav?'❤️':'🤍'}</button>
         <div class="ctop">
@@ -1681,7 +1688,7 @@ function render(){
           <span class="cprice">${isRent?`보${wonShort(item.deposit)}/월${wonShort(item.monthly||0)}`:wonShort(item.price)}</span>
         </div>
         <div class="cname">${item.name}</div>
-        ${isRent?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합계 ${won(tot)} <span style="font-size:10px;opacity:.7">(보증금+권리금)</span></div>`:''}
+        ${isRent&&monthlySum>0?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합금액 ${won(monthlySum)}/월 <span style="font-size:10px;opacity:.7">(월세+관리비)</span></div>`:''}
         <div class="cmeta">
           <span>📍 ${maskAddr(item)}</span>
           <span>🚪 ${item.rooms||'-'}실</span>
@@ -1968,7 +1975,8 @@ function showPopup(item){
   // ── 금액 블록 ──
   let priceHtml='';
   if(isRent){
-    const dep=item.deposit||0,mon=item.monthly||0,tot=dep+km;
+    const dep=item.deposit||0,mon=item.monthly||0,mnt=item.maintenance||0;
+    const monthlyTotal=mon+mnt; // 월세 + 관리비 합금액
     priceHtml=`
       <div class="price-grid">
         <div class="price-cell">
@@ -1976,20 +1984,16 @@ function showPopup(item){
           <div class="price-value accent">${won(dep)}</div>
         </div>
         <div class="price-cell">
-          <div class="price-label">임대료 (월)</div>
+          <div class="price-label">월세</div>
           <div class="price-value green">${won(mon)}</div>
         </div>
         <div class="price-cell">
           <div class="price-label">관리비 (월)</div>
-          <div class="price-value">${item.maintenance?won(item.maintenance):'-'}</div>
-        </div>
-        <div class="price-cell">
-          <div class="price-label">권리금</div>
-          <div class="price-value">${km>0?won(km):'없음'}</div>
+          <div class="price-value">${mnt>0?won(mnt):'-'}</div>
         </div>
         <div class="price-cell highlight">
-          <div class="price-label">합계금액 (보증금 + 권리금)</div>
-          <div class="price-value red">${won(tot)}</div>
+          <div class="price-label">합금액 (월세 + 관리비)</div>
+          <div class="price-value red">${won(monthlyTotal)}/월</div>
         </div>
       </div>`;
   } else {
@@ -2171,6 +2175,8 @@ function doLogin(){
     else{localStorage.removeItem('savedId');localStorage.removeItem('rememberIdChecked');}
   }catch(e){}
   currentUser=u;closeAll();err.classList.remove('show');
+  // 세션 저장 (새로고침 후 자동 로그인 유지)
+  try{localStorage.setItem('sessionUserId',u.id);localStorage.setItem('sessionUserPw',u.pw);}catch(e){}
   document.getElementById('lp').value='';
   if(!remember)document.getElementById('li').value='';
   renderHeader();render();
@@ -2178,7 +2184,11 @@ function doLogin(){
     alert('로그인 되었습니다.\n현재 관리자 승인 대기 중입니다.\n승인 완료 후 매물 등록이 가능합니다.');
   }
 }
-function doLogout(){currentUser=null;renderHeader();render();}
+function doLogout(){
+  currentUser=null;
+  try{localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
+  renderHeader();render();
+}
 // 저장된 아이디 복원
 try{
   const savedId=localStorage.getItem('savedId');
@@ -3526,6 +3536,21 @@ async function loadFromFirebase(){
     ];
     hideLoading();
   }
+  // ── 세션 복원: 새로고침 후 자동 로그인 ──
+  try{
+    const sid=localStorage.getItem('sessionUserId');
+    const spw=localStorage.getItem('sessionUserPw');
+    if(sid&&spw){
+      const su=users.find(u=>u.id===sid&&u.pw===spw);
+      if(su&&su.status!=='blocked'){
+        currentUser=su;
+        renderHeader();
+      } else {
+        localStorage.removeItem('sessionUserId');
+        localStorage.removeItem('sessionUserPw');
+      }
+    }
+  }catch(e){}
   render();
   kakao.maps.load(function(){
     try{geocoderObj=new kakao.maps.services.Geocoder();initMap();}
