@@ -143,8 +143,6 @@ header{display:flex;align-items:center;gap:14px;padding:0 18px;height:54px;backg
 /* 게시판 선택 모드 */
 .board-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .board-sel-bar{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:8px 14px;flex-wrap:wrap;width:100%}
-.bcard.selecting{cursor:default}
-.bcard.selecting:hover{transform:none}
 .bcard.selected{border-color:var(--accent);background:rgba(79,140,255,.08);box-shadow:0 0 0 2px rgba(79,140,255,.3)}
 .bcard-chk{position:absolute;top:12px;left:12px;width:20px;height:20px;border-radius:6px;border:2px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;z-index:2;font-size:12px;color:transparent}
 .bcard-chk:hover{border-color:var(--accent)}
@@ -1574,15 +1572,8 @@ function fmtDateAgo(ts){
   return `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
 }
 
-let boardSelectMode=false;
 const boardSelectedLids=new Set();
 
-function toggleBoardSelectMode(){
-  if(!currentUser)return;
-  boardSelectMode=!boardSelectMode;
-  if(!boardSelectMode)boardSelectedLids.clear();
-  renderBoard();
-}
 function toggleBoardSelect(lid,ev){
   ev.stopPropagation();
   if(boardSelectedLids.has(lid))boardSelectedLids.delete(lid);
@@ -1636,21 +1627,15 @@ function renderBoard(){
   const toolbar=document.getElementById('board-toolbar');
   countEl.textContent=`총 ${items.length}건`;
 
-  // ── 툴바: 로그인 시만 표시 ──
+  // ── 툴바: 로그인 시 항상 표시 ──
   if(currentUser){
-    if(boardSelectMode){
-      const selCnt=boardSelectedLids.size;
-      toolbar.innerHTML=`<div class="board-sel-bar">
-        <button class="btn btn-sm" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2)" onclick="toggleBoardSelectMode()">✕ 선택 취소</button>
-        <button class="btn btn-sm" style="background:var(--surface2);color:var(--accent);border:1px solid rgba(79,140,255,.3)" onclick="boardSelectAll()">☑ ${selCnt===items.length?'전체 해제':'전체 선택'}</button>
-        <span style="font-size:13px;color:var(--text);font-weight:700;margin-left:4px">${selCnt}건 선택됨</span>
-        <button class="btn btn-sm" onclick="boardGenImage()" style="margin-left:auto;background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700;padding:8px 18px;font-size:13px;border-radius:10px;box-shadow:0 2px 10px rgba(14,165,233,.3)">🖼 선택 매물 이미지 생성</button>
-      </div>`;
-    } else {
-      toolbar.innerHTML=`<div style="display:flex;justify-content:flex-end">
-        <button class="btn btn-sm" onclick="toggleBoardSelectMode()" style="background:rgba(79,140,255,.12);color:var(--accent);border:1px solid rgba(79,140,255,.3);font-weight:700">☑ 매물 선택</button>
-      </div>`;
-    }
+    const selCnt=boardSelectedLids.size;
+    toolbar.innerHTML=`<div class="board-sel-bar">
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--accent);border:1px solid rgba(79,140,255,.3)" onclick="boardSelectAll()">☑ ${selCnt===items.length&&items.length>0?'전체 해제':'전체 선택'}</button>
+      <span style="font-size:13px;color:var(--text);font-weight:700;margin-left:4px">${selCnt}건 선택됨</span>
+      ${selCnt>0?`<button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="boardSelectedLids.clear();renderBoard()">선택 초기화</button>`:''}
+      <button class="btn btn-sm" onclick="boardGenImage()" style="margin-left:auto;background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700;padding:8px 18px;font-size:13px;border-radius:10px;box-shadow:0 2px 10px rgba(14,165,233,.3)">🖼 선택 매물 이미지 생성</button>
+    </div>`;
   } else {
     toolbar.innerHTML='';
   }
@@ -1665,12 +1650,13 @@ function renderBoard(){
     const tot=isRent?(item.deposit||0)+(item.keymoney||0):0;
     const isFav=favIds.includes(item.lid);
     const isSel=boardSelectedLids.has(item.lid);
+    const showChk=!!currentUser;
     const card=document.createElement('div');
-    card.className='bcard'+(boardSelectMode?' selecting':'')+(isSel?' selected':'');
+    card.className='bcard'+(isSel?' selected':'');
     card.innerHTML=`
-      ${boardSelectMode?`<div class="bcard-chk" onclick="toggleBoardSelect('${item.lid}',event)">✓</div>`:''}
-      <button class="bcard-fav ${isFav?'on':''}" onclick="event.stopPropagation();toggleFavBoard('${item.lid}',this)" style="${boardSelectMode?'right:12px;top:12px':''}">${isFav?'❤️':'🤍'}</button>
-      <div class="bcard-top" style="${boardSelectMode?'padding-left:28px':''}">
+      ${showChk?`<div class="bcard-chk" onclick="toggleBoardSelect('${item.lid}',event)">✓</div>`:''}
+      <button class="bcard-fav ${isFav?'on':''}" onclick="event.stopPropagation();toggleFavBoard('${item.lid}',this)">${isFav?'❤️':'🤍'}</button>
+      <div class="bcard-top" style="${showChk?'padding-left:28px':''}">
         <div class="bcard-tags">
           <span class="dtag ${item.type}">${item.type}</span>
           <span class="dtag ${item.deal}">${item.deal}</span>
@@ -1687,10 +1673,7 @@ function renderBoard(){
         <span>🏢 ${item.floor||'-'}층</span>
         ${item.direction?`<span>🧭 ${item.direction}</span>`:''}
       </div>`;
-    card.addEventListener('click',()=>{
-      if(boardSelectMode){toggleBoardSelect(item.lid,{stopPropagation:()=>{}});return;}
-      showBoardDetail(item);
-    });
+    card.addEventListener('click',()=>showBoardDetail(item));
     grid.appendChild(card);
   });
 }
@@ -2424,7 +2407,7 @@ function doLogout(){
   Object.keys(_geoExact).forEach(k=>delete _geoExact[k]);
   Object.keys(_geoOffset).forEach(k=>delete _geoOffset[k]);
   // 게시판 선택 모드 초기화
-  boardSelectMode=false;boardSelectedLids.clear();
+  boardSelectedLids.clear();
   renderHeader();render();if(currentView==='board')renderBoard();
 }
 // 저장된 아이디 복원
@@ -3077,7 +3060,7 @@ function drawListingTable(canvas, items){
   ctx.beginPath(); ctx.moveTo(0,108); ctx.lineTo(W,108); ctx.stroke();
 
   // 컬럼 정의: [label, x, w, align]
-  // No | 종류 | 매물명 | 주소+층수 | 거래 | 가격 | 규모 | 수익률
+  // No | 종류 | 매물명 | 주소+층수 | 거래 | 가격 | 규모 | 담당자
   const C={
     no:   {x:14,  w:28},
     type: {x:50,  w:58},
@@ -3213,7 +3196,8 @@ function drawListingTable(canvas, items){
   ctx.fillStyle='rgba(100,116,139,.5)'; ctx.font='12px sans-serif'; ctx.textAlign='left';
   ctx.fillText('본 안내서는 참고용이며 실제 조건은 협의에 따라 변경될 수 있습니다.',24,footerY+28);
   ctx.fillStyle='rgba(79,140,255,.6)'; ctx.font='bold 12px sans-serif'; ctx.textAlign='right';
-  ctx.fillText('첫번째공인중개사사무소  ☎ 02-6404-5455',W-24,footerY+28);
+  const footerAgent=currentUser?`${currentUser.name}  ☎ ${currentUser.phone||'02-6404-5455'}`:'첫번째공인중개사사무소  ☎ 02-6404-5455';
+  ctx.fillText(footerAgent,W-24,footerY+28);
 }
 
 function imgRoundRect(ctx,x,y,w,h,r,fill){
