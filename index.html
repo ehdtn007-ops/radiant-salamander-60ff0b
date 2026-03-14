@@ -2827,6 +2827,7 @@ function renderAMembers(){
       <td><code style="color:var(--accent);font-size:11px">${u.id}</code></td>
       <td style="font-weight:600">${u.name}</td>
       <td style="color:var(--text2);font-size:11px">${u.phone||'-'}</td>
+      <td style="color:var(--text2);font-size:11px">${u.license||'-'}</td>
       <td style="text-align:center">${(u.listings||[]).length}건</td>
       <td><span class="sbadge s-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status==='active'?'활성':u.status==='pending'?'승인대기':'차단'}</span></td>
       <td><div class="abts">
