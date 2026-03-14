@@ -1208,7 +1208,8 @@ function updateHeaderDong(){
 // 데이터 (Firebase Firestore 연동)
 // ════════════════════════════════════════════
 let users = [];
-let BASE_DATA = [
+// ── 시드 데이터 (최초 마이그레이션용, Firestore에 올라가면 이후 사용 안 됨) ──
+const SEED_DATA = [
   {lid:'b1',type:'고시원',deal:'매매',name:'공덕 스마트고시원',prov:'서울',area:'마포구',dong:'공덕동',price:8500,keymoney:1200,rooms:14,baths:14,area2:165,floor:2,totalfloor:4,direction:'남향',parking:3,maintenance:20,year:2010,movein:'협의',approvedate:'2024-01-05',illegal:'해당없음',desc:'공덕역 역세권, 만실 운영 중.\n풀옵션 고시원, 수익률 안정적.'},
   {lid:'b2',type:'고시원',deal:'매매',name:'서초 하우스고시원',prov:'서울',area:'서초구',dong:'서초동',price:18000,keymoney:3000,rooms:22,baths:22,area2:280,floor:4,totalfloor:6,direction:'남동향',parking:6,maintenance:35,year:2013,movein:'협의',approvedate:'2024-02-01',illegal:'해당없음',desc:'서울대 인근 대학가 고시원.\n수험생 수요 풍부, 장기 공실 없음.'},
   {lid:'b3',type:'고시원',deal:'매매',name:'잠실 편한고시원',prov:'서울',area:'송파구',dong:'잠실동',price:22000,keymoney:2500,rooms:28,baths:28,area2:360,floor:3,totalfloor:5,direction:'남향',parking:8,maintenance:40,year:2016,movein:'즉시',approvedate:'2024-03-15',illegal:'해당없음',desc:'잠실역 도보 5분.\n2층부터 4층 전체 고시원 운영.\n리모델링 2023년 완료.'},
@@ -1259,8 +1260,9 @@ let BASE_DATA = [
   {lid:'b48',type:'모텔',deal:'매매',name:'송파 잠실파크모텔',prov:'서울',area:'송파구',dong:'석촌동',price:58000,keymoney:3500,rooms:34,baths:34,area2:1120,floor:6,totalfloor:6,direction:'남동향',parking:16,maintenance:165,year:2005,movein:'즉시',approvedate:'2024-01-05',illegal:'해당없음',desc:'석촌호수 인근, 관광객 수요.\n롯데월드·잠실 배후수요 풍부.'},
   {lid:'b49',type:'고시원',deal:'월세',name:'용산 삼각지고시원',prov:'서울',area:'용산구',dong:'한강로동',deposit:350,monthly:47,keymoney:850,rooms:15,baths:15,area2:180,floor:4,totalfloor:6,direction:'남향',parking:2,maintenance:17,year:2018,movein:'즉시',approvedate:'2024-03-05',illegal:'해당없음',desc:'삼각지역 도보 4분.\n국방부·용산 기업 직장인 수요.\n신축급 깔끔한 시설.'},
 ];
-// BASE는 Firebase에서 hidden 상태 반영 후 사용 (BASE_DATA 기반)
-const BASE = BASE_DATA;
+// BASE는 Firestore에서 로드 (초기에는 빈 배열, loadFromFirebase에서 채움)
+let BASE_DATA = [];
+let BASE = BASE_DATA;
 
 function buildAll(){
   const now=Date.now();
@@ -3358,7 +3360,10 @@ function _doArchive(ownerId, lid){
       BASE[idx].hidden=true;
       item={...BASE[idx],ownerId:null,ownerName:'기본'};
       BASE.splice(idx,1);
-      db.collection('base_hidden').doc(lid).set({hidden:true,deleted:true,archivedAt:Date.now()}).catch(e=>{});
+      // BASE_DATA에서도 제거
+      const di=BASE_DATA.findIndex(b=>b.lid===lid);
+      if(di>=0)BASE_DATA.splice(di,1);
+      db.collection('base_listings').doc(lid).delete().catch(e=>{});
     }
   }
   if(item){
@@ -3430,8 +3435,9 @@ function restoreArchived(lid){
     delete item.ownerId;delete item.ownerName;
     item.hidden=false;
     BASE.push(item);
-    // base_hidden 문서 삭제 → 노출 복구
-    db.collection('base_hidden').doc(lid).delete().catch(e=>{});
+    BASE_DATA.push(item);
+    // base_listings에 다시 추가
+    db.collection('base_listings').doc(lid).set(item).catch(e=>{});
   }
   archivedListings.splice(idx,1);
   try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
@@ -3464,8 +3470,7 @@ function toggleListingHidden(ownerId,lid){
   } else {
     const b=BASE.find(b=>b.lid===lid);
     if(b){b.hidden=!b.hidden;renderAListings();render();
-      if(b.hidden) db.collection('base_hidden').doc(lid).set({hidden:true}).catch(e=>console.error('저장 실패:',e));
-      else db.collection('base_hidden').doc(lid).delete().catch(e=>console.error('저장 실패:',e));
+      db.collection('base_listings').doc(lid).update({hidden:!!b.hidden}).catch(e=>console.error('저장 실패:',e));
     }
   }
 }
@@ -3531,8 +3536,11 @@ function delBaseListing(lid){
   if(!confirm('기본 매물을 삭제하시겠습니까?'))return;
   const idx=BASE.findIndex(b=>b.lid===lid);
   if(idx>=0){BASE.splice(idx,1);renderAListings();render();
-    db.collection('base_hidden').doc(lid).set({deleted:true}).catch(e=>console.error('저장 실패:',e));
+    db.collection('base_listings').doc(lid).delete().catch(e=>console.error('저장 실패:',e));
   }
+  // BASE_DATA에서도 제거
+  const di=BASE_DATA.findIndex(b=>b.lid===lid);
+  if(di>=0)BASE_DATA.splice(di,1);
 }
 
 // ════════════════════════════════════════════
@@ -3558,7 +3566,7 @@ function refreshRegisteredAt(ownerId,lid,btnEl){
     }
   } else {
     const b=BASE.find(b=>b.lid===lid);
-    if(b) b.registeredAt=now;
+    if(b){b.registeredAt=now;db.collection('base_listings').doc(lid).update({registeredAt:now}).catch(e=>console.error('저장 실패:',e));}
   }
   renderAListings();
   render();
@@ -3920,7 +3928,10 @@ function doEditListing(){
     }
   } else {
     const idx=BASE.findIndex(b=>b.lid===lid);
-    if(idx>=0) Object.assign(BASE[idx],updated);
+    if(idx>=0){
+      Object.assign(BASE[idx],updated);
+      db.collection('base_listings').doc(lid).set(BASE[idx]).then(()=>{console.log('기본매물 수정 저장 완료');}).catch(e=>{console.error('기본매물 수정 저장 실패:',e);});
+    }
   }
 
   err.classList.remove('show');
@@ -4418,38 +4429,58 @@ async function loadFromFirebase(){
 
     // 2. Firestore에서 users 로드
     const usersSnap = await db.collection('users').get();
-    setProgress(50);
+    setProgress(40);
     usersSnap.forEach(doc=>{
       const u = doc.data();
       if(!users.find(x=>x.id===u.id)) users.push(u);
     });
 
-    // 3. Firestore에서 BASE hidden/deleted 상태 로드
-    const hiddenSnap = await db.collection('base_hidden').get();
-    setProgress(70);
-    hiddenSnap.forEach(doc=>{
-      const data = doc.data();
-      const b = BASE_DATA.find(x=>x.lid===doc.id);
-      if(b){
-        if(data.deleted){ b._deleted=true; }
-        else { b.hidden=true; }
-      }
-    });
-    // deleted 매물은 BASE에서 제거
-    const toRemove = BASE_DATA.filter(b=>b._deleted).map(b=>b.lid);
-    toRemove.forEach(lid=>{const idx=BASE.findIndex(b=>b.lid===lid);if(idx>=0)BASE.splice(idx,1);});
+    // 3. Firestore에서 base_listings 로드
+    const baseSnap = await db.collection('base_listings').get();
+    setProgress(60);
+
+    if(baseSnap.empty){
+      // ── 최초 마이그레이션: SEED_DATA → Firestore ──
+      console.log('base_listings가 비어있습니다. 시드 데이터 마이그레이션 시작...');
+      const batch1 = db.batch();
+      const batch2 = db.batch();
+      SEED_DATA.forEach((item,i)=>{
+        const ref = db.collection('base_listings').doc(item.lid);
+        // Firestore batch는 최대 500건, 49건이라 한 batch로 충분
+        if(i<250) batch1.set(ref, item);
+        else batch2.set(ref, item);
+      });
+      await batch1.commit();
+      if(SEED_DATA.length>250) await batch2.commit();
+      console.log(`✅ ${SEED_DATA.length}건 마이그레이션 완료`);
+      // 마이그레이션 후 SEED_DATA를 BASE로 사용
+      BASE_DATA = SEED_DATA.map(item=>({...item}));
+    } else {
+      // ── Firestore에서 불러온 데이터 사용 ──
+      BASE_DATA = [];
+      baseSnap.forEach(doc=>{
+        BASE_DATA.push(doc.data());
+      });
+      console.log(`Firestore에서 기본 매물 ${BASE_DATA.length}건 로드`);
+    }
+
+    setProgress(80);
+    // hidden/deleted 필터링
+    const deletedLids = BASE_DATA.filter(b=>b._deleted).map(b=>b.lid);
+    BASE = BASE_DATA.filter(b=>!b._deleted);
 
     setProgress(100);
     hideLoading();
   } catch(e){
     console.error('Firebase 로드 실패:', e);
-    // 인증 실패 vs DB 실패 구분 안내
     if(e.code && e.code.indexOf('auth')>=0){
-      console.error('⚠️ Firebase 익명 인증이 활성화되지 않았습니다. Firebase 콘솔 → Authentication → Sign-in method에서 "Anonymous(익명)" 를 활성화하세요.');
+      console.error('⚠️ Firebase 익명 인증이 활성화되지 않았습니다.');
     } else if(e.code === 'permission-denied'){
-      console.error('⚠️ Firestore 보안 규칙에서 접근이 거부되었습니다. Firebase 콘솔 → Firestore → Rules에서 규칙을 확인하세요.');
+      console.error('⚠️ Firestore 보안 규칙에서 접근이 거부되었습니다.');
     }
-    // Firebase 연결 실패 시 기본 데이터로 폴백
+    // Firebase 연결 실패 시 SEED_DATA로 폴백
+    BASE_DATA = SEED_DATA.map(item=>({...item}));
+    BASE = BASE_DATA;
     users = [
       {id:'master',pw:'master123',name:'마스터관리자',phone:'02-0000-0000',license:'',role:'master',status:'active',listings:[]},
     ];
