@@ -689,7 +689,7 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="atabs">
       <div class="atab active" onclick="atab('members')">👥 회원 관리 <span id="pending-cnt-badge" style="font-size:10px;color:var(--yellow)"></span></div>
       <div class="atab" onclick="atab('listings')">🏠 매물 관리</div>
-      <div class="atab" onclick="atab('archived')">📦 지난매물</div>
+      <div class="atab" onclick="atab('archived')">📦 거래완료매물</div>
       <div class="atab" onclick="atab('stats')">📊 통계</div>
       <div class="atab" onclick="atab('profile')">👤 내 정보 변경</div>
     </div>
@@ -2412,7 +2412,7 @@ function doLogin(){
   // 로그인 시 좌표 캐시 초기화 → 정확한 주소로 핀 재배치
   Object.keys(_geoExact).forEach(k=>delete _geoExact[k]);
   Object.keys(_geoOffset).forEach(k=>delete _geoOffset[k]);
-  renderHeader();render();
+  renderHeader();render();if(currentView==='board')renderBoard();
   if(u.status==='pending'){
     alert('로그인 되었습니다.\n현재 관리자 승인 대기 중입니다.\n승인 완료 후 매물 등록이 가능합니다.');
   }
@@ -2817,8 +2817,8 @@ function renderAListings(){
     <div style="display:flex;gap:6px;align-items:center">
       <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="bulkRefreshToday()">📅 선택 오늘 갱신</button>
       <button class="btn btn-sm" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff;font-weight:700" onclick="bulkGenerateImages()">🖼 선택 이미지 생성</button>
-      <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3);font-weight:700" onclick="bulkArchive()">📦 선택 지난매물로</button>
-      <button class="btn btn-sm btn-red" onclick="bulkDelete()">🗑 선택 삭제</button>
+      <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3);font-weight:700" onclick="bulkArchive()">📦 선택 거래완료매물로</button>
+      <button class="btn btn-sm" style="background:rgba(62,207,142,.14);color:var(--green);border:1px solid rgba(62,207,142,.3);font-weight:700" onclick="bulkChangeOwner()">👤 선택 담당자 변경</button>
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;border:1px solid var(--border2);border-radius:7px;padding:4px 9px;white-space:nowrap">
         <input type="checkbox" id="chk-all" onchange="document.querySelectorAll('.row-chk').forEach(c=>c.checked=this.checked)" style="cursor:pointer;width:14px;height:14px">
         전체선택
@@ -2882,7 +2882,7 @@ function renderAListings(){
         <td style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-sm" style="background:var(--accent);color:#fff" onclick="openEditListingAdmin('${item.ownerId||''}','${item.lid}')">✏️수정</button>
           <button class="btn btn-sm" style="background:#ffb300;color:#191919;font-weight:700" onclick="refreshRegisteredAt('${item.ownerId||''}','${item.lid}',this)" title="오늘 날짜로 등록일 갱신">📅오늘</button>
-          <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3)" onclick="archiveListing('${item.ownerId||''}','${item.lid}')">📦지난매물</button>
+          <button class="btn btn-sm" style="background:rgba(168,85,247,.18);color:#c084fc;border:1px solid rgba(168,85,247,.3)" onclick="archiveListing('${item.ownerId||''}','${item.lid}')">📦거래완료매물</button>
           ${item.ownerId
             ?`<button class="btn btn-sm btn-red" onclick="delListing('${item.ownerId}','${item.lid}')">삭제</button>`
             :`<button class="btn btn-sm btn-red" onclick="delBaseListing('${item.lid}')">삭제</button>`}
@@ -3257,31 +3257,105 @@ function bulkRefreshToday(){
   });
   renderAListings();
 }
-function bulkDelete(){
-  const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
-  if(!items.length){alert('선택된 매물이 없습니다.');return;}
-  if(!confirm(`선택한 ${items.length}건을 삭제할까요? 되돌릴 수 없습니다.`))return;
-  items.forEach(({lid,ownerId})=>{
+function bulkChangeOwner(){
+  const checked=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
+  if(!checked.length){alert('담당자를 변경할 매물을 선택하세요.');return;}
+
+  // 활성 회원 목록 (마스터 제외)
+  const activeUsers=users.filter(u=>u.role!=='master'&&u.status==='active');
+  const optionsHtml=activeUsers.map(u=>`<option value="${u.id}">${u.name} (${u.id})</option>`).join('');
+
+  const ov=document.createElement('div');
+  ov.id='ov-bulk-owner';
+  ov.className='overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);z-index:700;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s';
+  ov.innerHTML=`<div class="modal" style="width:420px;animation:slideUp .22s">
+    <button class="modal-close" onclick="document.getElementById('ov-bulk-owner').remove()">✕</button>
+    <div class="modal-title">👤 담당자 일괄 변경</div>
+    <div class="modal-sub">선택한 <b style="color:var(--accent)">${checked.length}건</b>의 매물 담당자를 변경합니다</div>
+    <div class="fg">
+      <label class="fl">변경할 담당자</label>
+      <select class="fi" id="bulk-owner-sel">
+        <option value="">-- 기본 (사무소 직접관리) --</option>
+        ${optionsHtml}
+      </select>
+    </div>
+    <div id="bulk-owner-err" class="errmsg"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" style="flex:1" onclick="document.getElementById('ov-bulk-owner').remove()">취소</button>
+      <button class="btn btn-primary" style="flex:2" onclick="doBulkChangeOwner()">✅ 담당자 변경</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+
+function doBulkChangeOwner(){
+  const newOwnerId=document.getElementById('bulk-owner-sel').value;
+  const checked=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
+  if(!checked.length)return;
+
+  const newOwner=newOwnerId?users.find(u=>u.id===newOwnerId):null;
+  const label=newOwner?newOwner.name:'기본 (사무소 직접관리)';
+  if(!confirm(`선택한 ${checked.length}건의 담당자를 "${label}"(으)로 변경합니다.`))return;
+
+  checked.forEach(({lid,ownerId})=>{
+    // ── 1) 기존 소유자에서 매물 꺼내기 ──
+    let item=null;
     if(ownerId){
-      const u=users.find(u=>u.id===ownerId);
-      if(u&&u.listings){u.listings=u.listings.filter(l=>l.lid!==lid);db.collection('users').doc(u.id).set(u).catch(e=>{});}
+      const oldU=users.find(u=>u.id===ownerId);
+      if(oldU&&oldU.listings){
+        const idx=oldU.listings.findIndex(l=>l.lid===lid);
+        if(idx>=0){item={...oldU.listings[idx]};oldU.listings.splice(idx,1);db.collection('users').doc(oldU.id).set(oldU).catch(e=>{});}
+      }
     } else {
       const idx=BASE.findIndex(b=>b.lid===lid);
-      if(idx>=0){BASE.splice(idx,1);db.collection('base_listings').doc(lid).delete().catch(e=>{});}
+      if(idx>=0){item={...BASE[idx]};BASE.splice(idx,1);
+        const di=BASE_DATA.findIndex(b=>b.lid===lid);if(di>=0)BASE_DATA.splice(di,1);
+        db.collection('base_listings').doc(lid).delete().catch(e=>{});
+      }
+    }
+    if(!item)return;
+
+    // ── 2) 새 소유자에게 매물 넣기 ──
+    // 불필요한 필드 정리
+    delete item.ownerId;delete item.ownerName;delete item.ownerPhone;delete item.ownerLicense;
+
+    if(newOwnerId&&newOwner){
+      if(!newOwner.listings)newOwner.listings=[];
+      newOwner.listings.push(item);
+      db.collection('users').doc(newOwner.id).set(newOwner).catch(e=>{});
+    } else {
+      // 기본 매물로 이동
+      BASE_DATA.push(item);
+      BASE.push(item);
+      db.collection('base_listings').doc(lid).set(item).catch(e=>{});
     }
   });
+
+  // 팝업 닫기 & 갱신
+  const ov=document.getElementById('ov-bulk-owner');
+  if(ov)ov.remove();
   renderAListings();render();
+  // 현재 열린 상세 팝업의 담당자도 갱신
+  if(activePopupItem){
+    const wasChanged=checked.some(c=>c.lid===activePopupItem.lid);
+    if(wasChanged){
+      activePopupItem.ownerId=newOwnerId||null;
+      showPopup(activePopupItem);
+    }
+  }
+  alert(`${checked.length}건의 담당자가 "${label}"(으)로 변경되었습니다.`);
 }
 
 // ════════════════════════════════════════════
-// 지난매물 아카이브
+// 거래완료매물 아카이브
 // ════════════════════════════════════════════
 // archivedListings: [{...listing, ownerId, ownerName, archivedAt}]
 let archivedListings = [];
 try{archivedListings=JSON.parse(localStorage.getItem('archivedListings')||'[]');}catch(e){}
 
 function archiveListing(ownerId, lid){
-  if(!confirm('이 매물을 지난매물로 이동하시겠습니까?'))return;
+  if(!confirm('이 매물을 거래완료매물로 이동하시겠습니까?'))return;
   _doArchive(ownerId, lid);
   renderAListings(); render();
 }
@@ -3321,7 +3395,7 @@ function _doArchive(ownerId, lid){
 function bulkArchive(){
   const items=[...document.querySelectorAll('.row-chk:checked')].map(c=>({lid:c.dataset.lid,ownerId:c.dataset.owner}));
   if(!items.length){alert('선택된 매물이 없습니다.');return;}
-  if(!confirm(`선택한 ${items.length}건을 지난매물로 이동할까요?`))return;
+  if(!confirm(`선택한 ${items.length}건을 거래완료매물로 이동할까요?`))return;
   items.forEach(({lid,ownerId})=>_doArchive(ownerId,lid));
   renderAListings();render();
 }
@@ -3330,13 +3404,13 @@ function renderAArchived(){
   const el=document.getElementById('as-archived');
   try{const saved=localStorage.getItem('archivedListings');if(saved)archivedListings=JSON.parse(saved);}catch(e){}
   if(!archivedListings.length){
-    el.innerHTML='<div style="color:var(--text2);padding:40px;text-align:center;font-size:14px">📦 지난매물이 없습니다</div>';
+    el.innerHTML='<div style="color:var(--text2);padding:40px;text-align:center;font-size:14px">📦 거래완료매물이 없습니다</div>';
     return;
   }
   const sorted=[...archivedListings].sort((a,b)=>(b.archivedAt||0)-(a.archivedAt||0));
   el.innerHTML=`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:12px;color:var(--text2)">지난매물 <b style="color:var(--purple)">${sorted.length}건</b></div>
+    <div style="font-size:12px;color:var(--text2)">거래완료매물 <b style="color:var(--purple)">${sorted.length}건</b></div>
     <button class="btn btn-sm btn-red" onclick="clearAllArchived()">🗑 전체 삭제</button>
   </div>
   <div style="overflow-x:auto">
@@ -3391,14 +3465,14 @@ function restoreArchived(lid){
 }
 
 function deleteArchived(lid){
-  if(!confirm('지난매물에서 완전히 삭제하시겠습니까?'))return;
+  if(!confirm('거래완료매물에서 완전히 삭제하시겠습니까?'))return;
   archivedListings=archivedListings.filter(l=>l.lid!==lid);
   try{localStorage.setItem('archivedListings',JSON.stringify(archivedListings));}catch(e){}
   renderAArchived();
 }
 
 function clearAllArchived(){
-  if(!confirm(`지난매물 ${archivedListings.length}건을 모두 완전 삭제할까요? 되돌릴 수 없습니다.`))return;
+  if(!confirm(`거래완료매물 ${archivedListings.length}건을 모두 완전 삭제할까요? 되돌릴 수 없습니다.`))return;
   archivedListings=[];
   try{localStorage.setItem('archivedListings','[]');}catch(e){}
   renderAArchived();
