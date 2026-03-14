@@ -729,10 +729,10 @@ select:hover,select:focus{border-color:var(--accent)}
 <div class="overlay hidden" id="ov-mylistings">
   <div class="modal modal-xl">
     <button class="modal-close" onclick="closeAll()">✕</button>
-    <div class="modal-title">📋 내 매물 관리</div>
-    <div class="modal-sub">등록한 매물을 수정·삭제할 수 있습니다</div>
+    <div class="modal-title">📝 매물등록 및 관리</div>
+    <div class="modal-sub">매물을 등록하고, 등록한 매물을 수정·삭제할 수 있습니다</div>
     <div class="atabs">
-      <div class="atab active" onclick="myTab('mylist')">🏠 내 매물</div>
+      <div class="atab active" onclick="myTab('mylist')">🏠 등록매물 관리</div>
       <div class="atab" onclick="myTab('myprofile')">👤 내 정보 변경</div>
     </div>
     <div class="asec active" id="ms-mylist"></div>
@@ -2292,9 +2292,9 @@ function renderHeader(){
       document.getElementById('pending-cnt-badge').textContent=pendingCnt>0?`(승인대기 ${pendingCnt})`:' ';
     }
     el.innerHTML=`
-      ${(!isMaster&&!isPending)?`<button class="hbtn" onclick="openAllListings()" style="background:rgba(79,140,255,.18);color:#7eb3ff;border:1px solid rgba(79,140,255,.3)">📋 전체 매물</button><button class="hbtn accent" onclick="openListing()">+ 매물 등록</button>`:''}
+      ${(!isMaster&&!isPending)?`<button class="hbtn" onclick="openAllListings()" style="background:rgba(79,140,255,.18);color:#7eb3ff;border:1px solid rgba(79,140,255,.3)">📋 전체 매물</button><button class="hbtn accent" onclick="openMyListings()">📝 매물등록 및 관리</button>`:''}
       ${isMaster?`<button class="hbtn" onclick="openAllListings()" style="background:rgba(79,140,255,.18);color:#7eb3ff;border:1px solid rgba(79,140,255,.3)">📋 전체 매물</button>`:''}
-      <div class="uchip" onclick="${isMaster?'openAdmin()':'openMyListings()'}">
+      <div class="uchip" onclick="${isMaster?'openAdmin()':'openMyProfile()'}">
         <div class="uavatar ${isMaster?'master':''}">${currentUser.name[0]}</div>
         <span>${currentUser.name}</span>
         ${isMaster?'<span style="font-size:10px;margin-left:2px">⚙️</span>':''}
@@ -2454,6 +2454,8 @@ function doAddListing(){
   db.collection('users').doc(u.id).set(u).then(()=>{
     closeAll();err.classList.remove('show');render();
     alert('매물이 등록되었습니다!');
+    // 등록 후 매물 관리 패널로 이동
+    if(currentUser.role!=='master') openMyListings();
   }).catch(e=>{console.error('매물 등록 저장 실패:',e);alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');});
 }
 
@@ -2468,7 +2470,13 @@ function openAdmin(){if(!currentUser||currentUser.role!=='master')return;show('o
 function openMyListings(){
   if(!currentUser||currentUser.role==='master')return;
   show('ov-mylistings');
-  renderMyListings();
+  // 항상 매물 관리 탭을 먼저 보여줌
+  myTab('mylist');
+}
+function openMyProfile(){
+  if(!currentUser||currentUser.role==='master')return;
+  show('ov-mylistings');
+  myTab('myprofile');
 }
 function myTab(t){
   const tabs=['mylist','myprofile'];
@@ -2483,13 +2491,17 @@ function renderMyListings(){
   const u=users.find(x=>x.id===currentUser.id);
   const myItems=(u&&u.listings)?u.listings:[];
 
+  const regBtn=`<div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${myItems.length}</b>건</div>
+    <button class="btn btn-sm" style="background:linear-gradient(135deg,var(--accent),#6fa8ff);color:#fff;padding:8px 18px;font-size:13px;border-radius:10px;box-shadow:0 2px 10px rgba(79,140,255,.3)" onclick="closeAll();openListing()">➕ 새 매물 등록하기</button>
+  </div>`;
+
   if(!myItems.length){
-    el.innerHTML='<div style="color:var(--text2);padding:40px;text-align:center;font-size:14px">📭 등록한 매물이 없습니다.<br><span style="font-size:12px;margin-top:8px;display:inline-block">상단의 <b>+ 매물 등록</b> 버튼으로 매물을 등록해보세요.</span></div>';
+    el.innerHTML=regBtn+`<div style="color:var(--text2);padding:30px;text-align:center;font-size:14px;background:var(--surface2);border-radius:12px;border:1px dashed var(--border2)">📭 등록한 매물이 없습니다.<br><span style="font-size:12px;margin-top:8px;display:inline-block">위의 <b>새 매물 등록하기</b> 버튼을 눌러 매물을 등록해보세요.</span></div>`;
     return;
   }
 
-  el.innerHTML=`
-  <div style="margin-bottom:10px;font-size:12px;color:var(--text2)">총 <b style="color:var(--text)">${myItems.length}</b>건</div>
+  el.innerHTML=regBtn+`
   <div style="overflow-x:auto">
   <table class="atable" style="min-width:700px">
     <thead><tr>
