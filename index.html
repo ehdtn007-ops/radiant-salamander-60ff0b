@@ -1832,7 +1832,7 @@ function render(){
       c.className='card'+(activeId===item.lid?' active':'');
       c.id='card-'+item.lid;
       const isFav=favIds.includes(item.lid),isRent=item.deal==='월세';
-      const monthlySum=isRent?((item.monthly||0)+(item.maintenance||0)):0;
+      const investSum=isRent?((item.deposit||0)+(item.keymoney||0)):0;
       c.innerHTML=`
         <button class="card-fav ${isFav?'on':''}" onclick="event.stopPropagation();toggleFav('${item.lid}')">${isFav?'❤️':'🤍'}</button>
         <div class="ctop">
@@ -1840,7 +1840,7 @@ function render(){
           <span class="cprice">${isRent?`보${wonShort(item.deposit)}/월${wonShort(item.monthly||0)}`:wonShort(item.price)}</span>
         </div>
         <div class="cname">${item.name}</div>
-        ${isRent&&monthlySum>0?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합금액 ${won(monthlySum)}/월 <span style="font-size:10px;opacity:.7">(월세+관리비)</span></div>`:''}
+        ${isRent&&investSum>0?`<div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">합금액 ${won(investSum)} <span style="font-size:10px;opacity:.7">(보증금+권리금)</span></div>`:''}
         <div class="cmeta">
           <span>📍 ${currentUser?fullAddr(item):maskAddr(item)}</span>
           <span>🚪 ${item.rooms||'-'}실</span>
@@ -2127,8 +2127,8 @@ function showPopup(item){
   // ── 금액 블록 ──
   let priceHtml='';
   if(isRent){
-    const dep=item.deposit||0,mon=item.monthly||0,mnt=item.maintenance||0;
-    const monthlyTotal=mon+mnt; // 월세 + 관리비 합금액
+    const dep=item.deposit||0,mon=item.monthly||0,mnt=item.maintenance||0,km=item.keymoney||0;
+    const investTotal=dep+km; // 보증금 + 권리금 합금액
     priceHtml=`
       <div class="price-grid">
         <div class="price-cell">
@@ -2144,8 +2144,8 @@ function showPopup(item){
           <div class="price-value">${mnt>0?won(mnt):'-'}</div>
         </div>
         <div class="price-cell highlight">
-          <div class="price-label">합금액 (월세 + 관리비)</div>
-          <div class="price-value red">${won(monthlyTotal)}/월</div>
+          <div class="price-label">합금액 (보증금 + 권리금)</div>
+          <div class="price-value red">${won(investTotal)}</div>
         </div>
       </div>`;
   } else {
@@ -2725,7 +2725,7 @@ function renderAllListings(){
         const monthly=item.monthly||0;
         const mnt=item.maintenance||0;
         const dep=item.deposit||0;
-        const monthlySum=monthly+mnt;
+        const investSum=dep+km;
         const priceStr=isRent
           ?`<div style="font-size:11px;line-height:1.7">
               <span style="color:var(--text2)">보증금</span> <b style="color:#e8eeff">${won(dep)}</b>
@@ -2735,7 +2735,7 @@ function renderAllListings(){
               <span style="color:var(--text2)">임대료</span> <b style="color:#93c5fd">${won(monthly)}</b>
               &nbsp;·&nbsp;<span style="color:var(--text2)">관리비</span> <b style="color:#93c5fd">${won(mnt)}</b>
             </div>
-            <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-top:1px">합 ${won(monthlySum)}<span style="font-size:10px;font-weight:500;opacity:.7">/월</span></div>`
+            <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-top:1px">합 ${won(investSum)}<span style="font-size:10px;font-weight:500;opacity:.7"> (보증금+권리금)</span></div>`
           :`<span style="color:#4f8cff;font-weight:700;font-size:13px">${won(item.price||0)}</span>`;
         return `<tr>
           <td style="text-align:center">
@@ -3212,7 +3212,7 @@ function drawListingTable(canvas, items){
     ctx.textAlign='left';
     if(isRent){
       const dep=item.deposit||0, mon=item.monthly||0, mnt=item.maintenance||0;
-      const total=mon+mnt;
+      const total=dep+(item.keymoney||0);
       // 보증금
       ctx.fillStyle='rgba(147,197,253,.7)'; ctx.font='11px sans-serif';
       ctx.fillText('보증금',C.price.x, py+14);
@@ -3234,11 +3234,11 @@ function drawListingTable(canvas, items){
       ctx.fillStyle='#fbbf24'; ctx.font='11px sans-serif';
       ctx.fillText('합금액', C.price.x+136, py+34);
       ctx.fillStyle='#fff'; ctx.font='bold 13px sans-serif';
-      ctx.fillText(won(total)+'/월', C.price.x+178, py+34);
+      ctx.fillText(won(total), C.price.x+178, py+34);
       // 관리비 주석
       if(mnt>0){
         ctx.fillStyle='rgba(160,175,210,.45)'; ctx.font='10px sans-serif';
-        ctx.fillText('(월세'+won(mon)+'+관리비'+won(mnt)+')', C.price.x, py+50);
+        ctx.fillText('(보증금'+won(dep)+'+권리금'+won(km)+')', C.price.x, py+50);
       }
     } else {
       // 매매가만 표시
@@ -4400,36 +4400,26 @@ renderHeader();
 updateGsTypeFilterVisibility();
 toggleGsType('l');
 
-// 로딩 오버레이 표시
-document.body.insertAdjacentHTML('beforeend',`
-<div id="fb-loading" style="position:fixed;inset:0;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="font-size:36px">🏠</div>
-  <div style="color:#f0f2ff;font-size:16px;font-weight:600">데이터 불러오는 중...</div>
-  <div style="width:200px;height:4px;background:#1e2130;border-radius:4px;overflow:hidden">
-    <div id="fb-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#4f8cff,#3ecf8e);border-radius:4px;transition:width .3s"></div>
-  </div>
-</div>`);
-
-function setProgress(p){const el=document.getElementById('fb-progress');if(el)el.style.width=p+'%';}
-function hideLoading(){const el=document.getElementById('fb-loading');if(el)el.remove();}
+// 즉시 지도 + UI 표시 (데이터는 뒤에서 로드)
+render();
+kakao.maps.load(function(){
+  try{geocoderObj=new kakao.maps.services.Geocoder();initMap();}
+  catch(e){console.warn('카카오맵 초기화 실패:',e);}
+});
 
 async function loadFromFirebase(){
   try{
-    setProgress(10);
-
     // ── Firebase 익명 인증 (Firestore 접근 권한 확보) ──
     if(!auth.currentUser){
       await auth.signInAnonymously();
       console.log('Firebase 익명 인증 성공');
     }
 
-    setProgress(20);
     // 1. 마스터 계정 항상 포함
     users = [{id:'master',pw:'master123',name:'마스터관리자',phone:'02-0000-0000',license:'',role:'master',status:'active',listings:[]}];
 
     // 2. Firestore에서 users 로드
     const usersSnap = await db.collection('users').get();
-    setProgress(40);
     usersSnap.forEach(doc=>{
       const u = doc.data();
       if(!users.find(x=>x.id===u.id)) users.push(u);
@@ -4437,7 +4427,6 @@ async function loadFromFirebase(){
 
     // 3. Firestore에서 base_listings 로드
     const baseSnap = await db.collection('base_listings').get();
-    setProgress(60);
 
     if(baseSnap.empty){
       // ── 최초 마이그레이션: SEED_DATA → Firestore ──
@@ -4446,17 +4435,14 @@ async function loadFromFirebase(){
       const batch2 = db.batch();
       SEED_DATA.forEach((item,i)=>{
         const ref = db.collection('base_listings').doc(item.lid);
-        // Firestore batch는 최대 500건, 49건이라 한 batch로 충분
         if(i<250) batch1.set(ref, item);
         else batch2.set(ref, item);
       });
       await batch1.commit();
       if(SEED_DATA.length>250) await batch2.commit();
       console.log(`✅ ${SEED_DATA.length}건 마이그레이션 완료`);
-      // 마이그레이션 후 SEED_DATA를 BASE로 사용
       BASE_DATA = SEED_DATA.map(item=>({...item}));
     } else {
-      // ── Firestore에서 불러온 데이터 사용 ──
       BASE_DATA = [];
       baseSnap.forEach(doc=>{
         BASE_DATA.push(doc.data());
@@ -4464,13 +4450,9 @@ async function loadFromFirebase(){
       console.log(`Firestore에서 기본 매물 ${BASE_DATA.length}건 로드`);
     }
 
-    setProgress(80);
     // hidden/deleted 필터링
-    const deletedLids = BASE_DATA.filter(b=>b._deleted).map(b=>b.lid);
     BASE = BASE_DATA.filter(b=>!b._deleted);
 
-    setProgress(100);
-    hideLoading();
   } catch(e){
     console.error('Firebase 로드 실패:', e);
     if(e.code && e.code.indexOf('auth')>=0){
@@ -4484,7 +4466,6 @@ async function loadFromFirebase(){
     users = [
       {id:'master',pw:'master123',name:'마스터관리자',phone:'02-0000-0000',license:'',role:'master',status:'active',listings:[]},
     ];
-    hideLoading();
   }
   // ── 세션 복원: 새로고침 후 자동 로그인 ──
   try{
@@ -4501,12 +4482,10 @@ async function loadFromFirebase(){
       }
     }
   }catch(e){}
+  // 데이터 로드 완료 → 화면 갱신
   render();
-  kakao.maps.load(function(){
-    try{geocoderObj=new kakao.maps.services.Geocoder();initMap();}
-    catch(e){console.warn('카카오맵 초기화 실패:',e);}
-  });
-  checkUrlLid(); // URL에 ?lid= 파라미터 있으면 해당 매물 자동 오픈
+  if(kakaoMap) initMap();
+  checkUrlLid();
 }
 
 loadFromFirebase();
