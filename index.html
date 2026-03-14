@@ -1250,9 +1250,9 @@ function pinLbl(item){
     const dep=item.deposit||0,mon=item.monthly||0,tot=dep+(item.keymoney||0);
     return `<span class="pin-price-line">${wonShort(dep)}/${wonShort(mon)}</span>${rooms}<span class="pin-tot-line">합${wonShort(tot)}</span>`;
   }
-  const v=item.price||0,km=item.keymoney||0,tot=v+km;
+  const v=item.price||0;
   const priceLine=v>=10000?`${Math.floor(v/10000)}억${v%10000?Math.round((v%10000)/1000)+'천':''}`:v>0?`${v.toLocaleString()}만`:'';
-  return km>0?`<span class="pin-price-line">${priceLine}</span>${rooms}<span class="pin-tot-line">합${wonShort(tot)}</span>`:`<span class="pin-price-line">${priceLine}</span>${rooms}`;
+  return `<span class="pin-price-line">${priceLine}</span>${rooms}`;
 }
 function pinTypeTag(item){
   const pc=pinClass(item);
