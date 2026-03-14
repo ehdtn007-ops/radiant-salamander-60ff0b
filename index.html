@@ -2821,13 +2821,12 @@ function renderAMembers(){
     const order={pending:0,active:1,blocked:2};
     return (order[a.status]||1)-(order[b.status]||1);
   });
-  el.innerHTML=`<table class="atable">
-    <thead><tr><th>아이디</th><th>이름</th><th>연락처</th><th>중개사번호</th><th>매물수</th><th>상태</th><th>관리</th></tr></thead>
+  el.innerHTML=`<table class="atable" style="min-width:700px">
+    <thead><tr><th style="width:110px">아이디</th><th style="width:90px">이름</th><th style="width:130px">연락처</th><th style="width:70px;text-align:center">매물수</th><th style="width:80px">상태</th><th style="width:200px">관리</th></tr></thead>
     <tbody>${list.map(u=>`<tr>
       <td><code style="color:var(--accent);font-size:11px">${u.id}</code></td>
       <td style="font-weight:600">${u.name}</td>
       <td style="color:var(--text2);font-size:11px">${u.phone||'-'}</td>
-      <td style="color:var(--text2);font-size:11px">${u.license||'-'}</td>
       <td style="text-align:center">${(u.listings||[]).length}건</td>
       <td><span class="sbadge s-${u.status==='active'?'active':u.status==='pending'?'pending':'blocked'}">${u.status==='active'?'활성':u.status==='pending'?'승인대기':'차단'}</span></td>
       <td><div class="abts">
