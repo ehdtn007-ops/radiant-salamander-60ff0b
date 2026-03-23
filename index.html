@@ -511,6 +511,12 @@ select:hover,select:focus{border-color:var(--accent)}
   select{font-size:11px;padding:4px 6px}
   .hbtn{padding:4px 10px;font-size:11px}
 }
+/* 모바일 가로모드 */
+@media (max-height:500px) and (orientation:landscape){
+  .dpop{max-height:70dvh}
+  .panel{max-height:40vh}
+  .modal{max-height:80vh;overflow-y:auto}
+}
 
 /* ═══ AI 채팅 패널 ═══ */
 .ai-fab{position:fixed;bottom:22px;left:22px;z-index:550;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(124,58,237,.5);display:flex;align-items:center;justify-content:center;font-size:24px;transition:all .2s}
@@ -1220,11 +1226,12 @@ const REGION={
   "제주":{"제주시":["이도동","삼도동","용담동","연동","노형동","화북동","아라동","오라동"],"서귀포시":["서귀동","중앙동","동홍동","중문동","대정읍","남원읍","성산읍"]}
 };
 
+const REGION_KEYS=Object.keys(REGION);
 // ════════════════════════════════════════════
 // 지역 드롭다운
 // ════════════════════════════════════════════
 function initProvDropdowns(){
-  const provs=Object.keys(REGION);
+  const provs=REGION_KEYS;
   const ffProv=document.getElementById('ff-prov');
   provs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ffProv.appendChild(o);});
   ffProv.addEventListener('change',()=>{updateHeaderGu();activeId=null;closePopupSilent();render();saveFilters();flyToRegion();});
@@ -1256,7 +1263,7 @@ function initProvDropdowns(){
 function initModalRegion(prefix){
   const ps=document.getElementById(prefix+'prov');
   const ph=document.createElement('option');ph.value='';ph.textContent='시/도 선택';ps.appendChild(ph);
-  Object.keys(REGION).forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
+  REGION_KEYS.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
   updateGuList(prefix);
 }
 function updateGuList(prefix){
@@ -1384,7 +1391,7 @@ function openDirPopup(prefix){
 let favIds=[];
 let clusterFilterIds=null; // 클러스터 선택 시 해당 lid 목록만 노출
 let mapBoundsFilter=false; // 지도 범위 내 매물만 노출 여부
-try{favIds=JSON.parse(localStorage.getItem('favIds')||'[]');}catch(e){}
+try{favIds=JSON.parse(localStorage.getItem('favIds')||'[]');}catch(e){favIds=[];localStorage.removeItem('favIds');}
 
 // ════════════════════════════════════════════
 // 가격 포맷
@@ -1646,14 +1653,14 @@ function prefetchAllCoords(callback){
       if(u&&u.listings){
         const orig=u.listings.find(l=>l.lid===item.lid);
         if(orig){orig.lat=lat;orig.lng=lng;}
-        db.collection('users').doc(u.id).set(u).catch(()=>{});
+        db.collection('users').doc(u.id).set(u).catch(e=>console.error('DB오류:',e));
       }
     } else {
       const orig=BASE.find(b=>b.lid===item.lid);
       if(orig){orig.lat=lat;orig.lng=lng;}
       const origData=BASE_DATA.find(b=>b.lid===item.lid);
       if(origData){origData.lat=lat;origData.lng=lng;}
-      db.collection('base_listings').doc(item.lid).update({lat,lng}).catch(()=>{});
+      db.collection('base_listings').doc(item.lid).update({lat,lng}).catch(e=>console.error('DB오류:',e));
     }
   };
 
@@ -1743,11 +1750,16 @@ function resolveAndSaveCoords(lst, docRef, isUserDoc, userObj){
 // 도로명 주소 좌표 → 지번 주소 좌표 순으로 우선 사용
 function _bestLatLng(res){
   const r=res[0];
+  var lat,lng;
   // 도로명 주소가 있으면 그 좌표가 더 정확 (건물 입구 기준)
   if(r.road_address && r.road_address.y && r.road_address.x){
-    return [parseFloat(r.road_address.y), parseFloat(r.road_address.x)];
+    lat=parseFloat(r.road_address.y);lng=parseFloat(r.road_address.x);
+  } else {
+    lat=parseFloat(r.y);lng=parseFloat(r.x);
   }
-  return [parseFloat(r.y), parseFloat(r.x)];
+  // NaN 또는 한국 범위 밖이면 null 반환
+  if(isNaN(lat)||isNaN(lng)||lat<33||lat>39||lng<124||lng<124||lng>132)return null;
+  return [lat,lng];
 }
 
 function getLatLng(prov,area,dong,cb,lid,jibun){
@@ -1769,19 +1781,15 @@ function getLatLng(prov,area,dong,cb,lid,jibun){
     const qFull=`${prov} ${area} ${dong} ${jibun}`.trim();
     geocoderObj.addressSearch(qFull,function(res,stat){
       if(stat===kakao.maps.services.Status.OK){
-        const [lat,lng]=_bestLatLng(res);
-        _geoExact[exactKey]=[lat,lng];
-        cb(lat,lng);
-        return;
+        const bl=_bestLatLng(res);
+        if(bl){_geoExact[exactKey]=bl;cb(bl[0],bl[1]);return;}
       }
       // 2차: 시도 제외 검색
       const qShort=`${area} ${dong} ${jibun}`.trim();
       geocoderObj.addressSearch(qShort,function(res2,stat2){
         if(stat2===kakao.maps.services.Status.OK){
-          const [lat,lng]=_bestLatLng(res2);
-          _geoExact[exactKey]=[lat,lng];
-          cb(lat,lng);
-          return;
+          const bl2=_bestLatLng(res2);
+          if(bl2){_geoExact[exactKey]=bl2;cb(bl2[0],bl2[1]);return;}
         }
         // 3차: 동 중심으로 폴백 (_geoExact에는 저장하지 않음 — 정확한 좌표가 아니므로 캐시 오염 방지)
         const qDongOnly=dong?`${prov} ${area} ${dong}`:`${prov} ${area}`;
@@ -2368,11 +2376,13 @@ function render(){
         clusterFilterIds=null;
         render();showPopup(item);
         c.scrollIntoView({behavior:'smooth',block:'nearest'});
+        if(!kakaoMap)return;
         const zoomLv=currentUser?4:5;
         if(item.lat&&item.lng){
           kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
         } else {
           getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{
+            if(!kakaoMap)return;
             kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
           },item.lid,item.jibun);
         }
@@ -2662,8 +2672,8 @@ function dpopToggleHidden(){
   var b=BASE.find(function(b){return b.lid===item.lid;});if(b)b.hidden=item.hidden;
   var bd=BASE_DATA.find(function(b){return b.lid===item.lid;});if(bd)bd.hidden=item.hidden;
   BASE=BASE_DATA.filter(function(b){return !b._deleted;});
-  if(item.ownerId){var u=users.find(function(u){return u.id===item.ownerId;});if(u)db.collection('users').doc(u.id).set(u).catch(function(){});}
-  else db.collection('base_listings').doc(item.lid).update({hidden:item.hidden}).catch(function(){});
+  if(item.ownerId){var u=users.find(function(u){return u.id===item.ownerId;});if(u)db.collection('users').doc(u.id).set(u).catch(function(e){console.error('DB오류:',e);});}
+  else db.collection('base_listings').doc(item.lid).update({hidden:item.hidden}).catch(function(e){console.error('DB오류:',e);});
   render();if(currentView==='board')renderBoard();
 }
 function dpopRefreshDate(btn){
@@ -2672,8 +2682,8 @@ function dpopRefreshDate(btn){
   var b=BASE.find(function(b){return b.lid===item.lid;});if(b)b.registeredAt=now;
   var bd=BASE_DATA.find(function(b){return b.lid===item.lid;});if(bd)bd.registeredAt=now;
   if(btn){var orig=btn.textContent;btn.textContent='✅';btn.disabled=true;setTimeout(function(){btn.textContent=orig;btn.disabled=false;},1500);}
-  if(item.ownerId){var u=users.find(function(u){return u.id===item.ownerId;});if(u)db.collection('users').doc(u.id).set(u).catch(function(){});}
-  else db.collection('base_listings').doc(item.lid).update({registeredAt:now}).catch(function(){});
+  if(item.ownerId){var u=users.find(function(u){return u.id===item.ownerId;});if(u)db.collection('users').doc(u.id).set(u).catch(function(e){console.error('DB오류:',e);});}
+  else db.collection('base_listings').doc(item.lid).update({registeredAt:now}).catch(function(e){console.error('DB오류:',e);});
   render();if(currentView==='board')renderBoard();
 }
 function updateFavBadge(){const c=document.getElementById('fav-cnt');c.textContent=favIds.length?`(${favIds.length})`:''; }
@@ -2694,8 +2704,9 @@ function renderFavList(){
       <div class="cmeta"><span>📍 ${currentUser?fullAddr(item):maskAddr(item)}</span><span>🚪 ${item.rooms||'-'}실</span></div>`;
     c.addEventListener('click',()=>{
       activeId=item.lid;activePopupItem=item;render();showPopup(item);
+      if(!kakaoMap)return;
       const zoomLv=currentUser?4:5;
-      if(item.lat&&item.lng){kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));}else{getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));},item.lid,item.jibun);}
+      if(item.lat&&item.lng){kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));}else{getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{if(!kakaoMap)return;kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));},item.lid,item.jibun);}
     });
     el.appendChild(c);
   });
@@ -3012,7 +3023,7 @@ function doLogin(){
   }catch(e){}
   currentUser=u;closeAll();err.classList.remove('show');
   // 세션 저장 (새로고침 후 자동 로그인 유지)
-  try{localStorage.setItem('sessionUserId',u.id);localStorage.setItem('sessionUserPw',u.pw);}catch(e){}
+  try{var _st=btoa(u.id+':'+u.pw+':'+Date.now());localStorage.setItem('sessionToken',_st);localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
   document.getElementById('lp').value='';
   if(!remember)document.getElementById('li').value='';
   // 로그인 시 좌표 캐시 전체 초기화
@@ -3034,7 +3045,7 @@ function doLogin(){
 }
 function doLogout(){
   currentUser=null;
-  try{localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
+  try{localStorage.removeItem('sessionToken');localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
   // 로그아웃 시 좌표 캐시 초기화 → 동 단위 랜덤으로 핀 재배치
   Object.keys(_geoExact).forEach(k=>delete _geoExact[k]);
   Object.keys(_geoOffset).forEach(k=>delete _geoOffset[k]);
@@ -3395,7 +3406,7 @@ function saveMyProfilePw(){
   currentUser.pw=nw;
   const uPwIdx=users.findIndex(u=>u.id===currentUser.id);
   if(uPwIdx>=0)users[uPwIdx].pw=nw;
-  localStorage.setItem('sessionUserPw',nw);
+  try{var _st3=btoa(currentUser.id+':'+nw+':'+Date.now());localStorage.setItem('sessionToken',_st3);localStorage.removeItem('sessionUserPw');}catch(_e){}
   db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
     msg.style.color='var(--green)';msg.textContent='✅ 비밀번호가 변경됐습니다!';
     document.getElementById('my-pf-pw-cur').value='';
@@ -3425,7 +3436,7 @@ function doWithdraw(){
   db.collection('users').doc(uid).delete().catch(e=>console.error('회원 삭제 실패:',e));
   // 로그아웃 처리
   currentUser=null;
-  try{localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
+  try{localStorage.removeItem('sessionToken');localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');}catch(e){}
   closeAll();
   renderHeader();render();
   alert('탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.');
@@ -3543,8 +3554,8 @@ async function doBulkFetchBldg(){
       if(bd.totArea){upd.area2=Math.round(parseFloat(bd.totArea));item.area2=upd.area2;}
       if(bd.mainPurpsCdNm){upd.mainPurpose=bd.mainPurpsCdNm;item.mainPurpose=upd.mainPurpose;}
       if(bd.vlawBldYn==='Y'){upd.illegal='위반건축물';item.illegal='위반건축물';}
-      if(_oid){var ou=users.find(function(u){return u.id===_oid;});if(ou)await db.collection('users').doc(ou.id).set(ou).catch(function(){});}
-      else await db.collection('base_listings').doc(_lid).update(upd).catch(function(){});
+      if(_oid){var ou=users.find(function(u){return u.id===_oid;});if(ou)await db.collection('users').doc(ou.id).set(ou).catch(function(e){console.error('DB오류:',e);});}
+      else await db.collection('base_listings').doc(_lid).update(upd).catch(function(e){console.error('DB오류:',e);});
       if(stEl)stEl.innerHTML='<span style="color:var(--green)">✅</span>';ok++;
     }catch(e){if(stEl)stEl.innerHTML='<span style="color:var(--red)" title="'+e.message+'">❌</span>';fail++;}
     done++;prog.textContent='처리 중... '+done+'/'+checked.length+' (성공:'+ok+' 실패:'+fail+')';
@@ -3592,7 +3603,7 @@ async function doBulkGeocode(forceAll){
   function extractLatLng(r){
     var lat=r.road_address&&r.road_address.y?parseFloat(r.road_address.y):parseFloat(r.y);
     var lng=r.road_address&&r.road_address.x?parseFloat(r.road_address.x):parseFloat(r.x);
-    return (lat&&lng&&!isNaN(lat)&&!isNaN(lng))?{lat:lat,lng:lng}:null;
+    return (lat&&lng&&!isNaN(lat)&&!isNaN(lng)&&lat>33&&lat<39&&lng>124&&lng<132)?{lat:lat,lng:lng}:null;
   }
 
   for(var i=0;i<targets.length;i++){
@@ -3630,13 +3641,13 @@ async function doBulkGeocode(forceAll){
       if(entry._oid&&entry._user){
         var origL=entry._user.listings&&entry._user.listings.find(function(l){return l.lid===item.lid;});
         if(origL){origL.lat=coord.lat;origL.lng=coord.lng;}
-        db.collection('users').doc(entry._oid).set(entry._user).catch(function(){});
+        db.collection('users').doc(entry._oid).set(entry._user).catch(function(e){console.error('DB오류:',e);});
       } else {
         var origB=BASE_DATA.find(function(b){return b.lid===item.lid;});
         if(origB){origB.lat=coord.lat;origB.lng=coord.lng;}
         var origBase=BASE.find(function(b){return b.lid===item.lid;});
         if(origBase){origBase.lat=coord.lat;origBase.lng=coord.lng;}
-        db.collection('base_listings').doc(item.lid).update({lat:coord.lat,lng:coord.lng}).catch(function(){});
+        db.collection('base_listings').doc(item.lid).update({lat:coord.lat,lng:coord.lng}).catch(function(e){console.error('DB오류:',e);});
       }
       ok++;
     } else {fail++;}
@@ -5598,7 +5609,7 @@ function saveProfilePw(){
   // users 배열 동기화
   const uPwIdx=users.findIndex(u=>u.id===currentUser.id);
   if(uPwIdx>=0)users[uPwIdx].pw=nw;
-  localStorage.setItem('sessionUserPw',nw);
+  try{var _st4=btoa(currentUser.id+':'+nw+':'+Date.now());localStorage.setItem('sessionToken',_st4);localStorage.removeItem('sessionUserPw');}catch(_e){}
   db.collection('users').doc(currentUser.id).set(currentUser).then(()=>{
     msg.style.color='var(--green)';msg.textContent='✅ 비밀번호가 변경됐습니다!';
     document.getElementById('pf-pw-cur').value='';
@@ -5741,19 +5752,26 @@ async function loadFromFirebase(){
   }
   // ── 세션 복원: 새로고침 후 자동 로그인 ──
   try{
-    const sid=localStorage.getItem('sessionUserId');
-    const spw=localStorage.getItem('sessionUserPw');
-    if(sid&&spw){
-      const su=users.find(u=>u.id===sid&&u.pw===spw);
+    // 레거시 평문 세션 마이그레이션
+    var _oldSid=localStorage.getItem('sessionUserId');
+    var _oldSpw=localStorage.getItem('sessionUserPw');
+    if(_oldSid&&_oldSpw){
+      localStorage.setItem('sessionToken',btoa(_oldSid+':'+_oldSpw+':'+Date.now()));
+      localStorage.removeItem('sessionUserId');localStorage.removeItem('sessionUserPw');
+    }
+    var _tok=localStorage.getItem('sessionToken');
+    if(_tok){
+      var _parts=atob(_tok).split(':');
+      var _sid2=_parts[0],_spw2=_parts[1];
+      var su=users.find(u=>u.id===_sid2&&u.pw===_spw2);
       if(su&&su.status!=='blocked'){
         currentUser=su;
         renderHeader();
       } else {
-        localStorage.removeItem('sessionUserId');
-        localStorage.removeItem('sessionUserPw');
+        localStorage.removeItem('sessionToken');
       }
     }
-  }catch(e){}
+  }catch(e){localStorage.removeItem('sessionToken');}
   // Gemini API 키 로드
   await loadGeminiKey();
   // 데이터 로드 완료 → 좌표 캐시 초기화
@@ -6033,7 +6051,7 @@ async function _aiRefreshDate(d){
 async function _aiBulkHidden(d){
   if(!currentUser||currentUser.role!=='master')return{text:'마스터 관리자만 가능합니다.',tag:null};
   var hidden=!!d.hidden,cnt=0;
-  BASE.filter(function(i){return (!d.type||d.type==='all'||i.type===d.type)&&(!d.deal||d.deal==='all'||i.deal===d.deal);}).forEach(function(item){item.hidden=hidden;cnt++;db.collection('base_listings').doc(item.lid).update({hidden:hidden}).catch(function(){});});
+  BASE.filter(function(i){return (!d.type||d.type==='all'||i.type===d.type)&&(!d.deal||d.deal==='all'||i.deal===d.deal);}).forEach(function(item){item.hidden=hidden;cnt++;db.collection('base_listings').doc(item.lid).update({hidden:hidden}).catch(function(e){console.error('DB오류:',e);});});
   var aff=new Set();
   users.forEach(function(u){if(u.role==='master'||!u.listings)return;u.listings.forEach(function(l){if((!d.type||d.type==='all'||l.type===d.type)&&(!d.deal||d.deal==='all'||l.deal===d.deal)){l.hidden=hidden;cnt++;aff.add(u);}});});
   for(var u of aff){try{await db.collection('users').doc(u.id).set(u);}catch(e){}}
@@ -6044,7 +6062,7 @@ async function _aiBulkHidden(d){
 async function _aiBulkRefresh(d){
   if(!currentUser||currentUser.role!=='master')return{text:'마스터 관리자만 가능합니다.',tag:null};
   var now3=Date.now(),cnt=0;
-  BASE.filter(function(i){return (!d.type||d.type==='all'||i.type===d.type)&&(!d.deal||d.deal==='all'||i.deal===d.deal);}).forEach(function(item){item.registeredAt=now3;cnt++;db.collection('base_listings').doc(item.lid).update({registeredAt:now3}).catch(function(){});});
+  BASE.filter(function(i){return (!d.type||d.type==='all'||i.type===d.type)&&(!d.deal||d.deal==='all'||i.deal===d.deal);}).forEach(function(item){item.registeredAt=now3;cnt++;db.collection('base_listings').doc(item.lid).update({registeredAt:now3}).catch(function(e){console.error('DB오류:',e);});});
   var aff=new Set();
   users.forEach(function(u){if(u.role==='master'||!u.listings)return;u.listings.forEach(function(l){if((!d.type||d.type==='all'||l.type===d.type)&&(!d.deal||d.deal==='all'||l.deal===d.deal)){l.registeredAt=now3;cnt++;aff.add(u);}});});
   for(var u of aff){try{await db.collection('users').doc(u.id).set(u);}catch(e){}}
