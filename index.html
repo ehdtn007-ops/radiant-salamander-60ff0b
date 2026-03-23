@@ -177,6 +177,12 @@ select:hover,select:focus{border-color:var(--accent)}
 .hbtn:hover{border-color:var(--accent);color:var(--accent)}
 .hbtn.accent{background:rgba(79,140,255,.12);border-color:var(--accent);color:var(--accent)}
 .hbtn.accent:hover{background:rgba(79,140,255,.22)}
+/* 범위 필터 (한줄 칩) */
+.rf-row{display:flex;gap:2px;align-items:center}
+.rf-chip{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
+.rf-chip:hover{border-color:var(--accent);color:var(--accent)}
+.rf-chip.sel{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+.rf-chip.in{background:rgba(79,140,255,.18);color:var(--accent);border-color:var(--accent)}
 
 /* ═══ 메인 레이아웃 ═══ */
 .main{display:flex;flex:1;overflow:hidden;position:relative}
@@ -213,7 +219,7 @@ select:hover,select:focus{border-color:var(--accent)}
 /* 모텔 월세 — 청록 */
 .cpin-bub.mt-r{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff}.cpin-bub.mt-r::after{border-top-color:#0891b2}
 /* 핀 위 종류 태그 */
-.pin-kind-tag{position:absolute;top:-20px;left:0;font-size:9px;font-weight:900;color:#fff;border-radius:4px;padding:2px 6px;white-space:nowrap;line-height:1.5;box-shadow:0 2px 5px rgba(0,0,0,.5);letter-spacing:.3px;z-index:10;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000}
+.pin-kind-tag{display:block;font-size:9px;font-weight:900;color:#fff;border-radius:4px;padding:2px 6px;white-space:nowrap;line-height:1.5;box-shadow:0 2px 5px rgba(0,0,0,.5);letter-spacing:.3px;z-index:10;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;margin-bottom:2px;text-align:center}
 .pin-kind-tag.gs  {background:#7c3aed}
 .pin-kind-tag.gs-r{background:#d97706}
 .pin-kind-tag.mt  {background:#1d4ed8}
@@ -392,6 +398,7 @@ select:hover,select:focus{border-color:var(--accent)}
   select{font-size:11px;padding:4px 6px}
   .huser{margin-left:auto}
   .hbtn{padding:4px 10px;font-size:11px}
+  .rf-chip{padding:2px 5px;font-size:9px}
   .uchip{font-size:11px;padding:3px 8px 3px 6px}
   .main{flex-direction:column}
   #map-wrap{flex:none;height:45vh;width:100%}
@@ -954,7 +961,7 @@ select:hover,select:focus{border-color:var(--accent)}
       <select id="ff-type"><option value="all" selected>전체</option><option value="고시원">고시원</option><option value="모텔">모텔</option></select>
     </div>
     <div class="fg-h"><span class="fl-h">거래</span>
-      <select id="ff-deal"><option value="all" selected>전체</option><option value="매매">매매</option><option value="월세">월세</option></select>
+      <select id="ff-deal"><option value="all" selected>전체</option><option value="매매">매매</option><option value="월세">임대</option></select>
     </div>
     <div class="fg-h" id="ff-gstype-wrap" style="align-items:center;gap:4px">
       <span class="fl-h">유형</span>
@@ -984,27 +991,14 @@ select:hover,select:focus{border-color:var(--accent)}
     <div class="fg-h"><span class="fl-h">동</span>
       <select id="ff-dong"><option value="all">전체</option></select>
     </div>
-    <div class="fg-h"><span class="fl-h">최대금액</span>
-      <select id="ff-price">
-        <option value="99999">전체</option>
-        <option value="1">1억↓</option>
-        <option value="2">2억↓</option>
-        <option value="3">3억↓</option>
-        <option value="4">4억↓</option>
-        <option value="5">5억↓</option>
-        <option value="10">10억↓</option>
-        <option value="30">30억↓</option>
-      </select>
-    </div>
     <div class="fg-h"><span class="fl-h">방 갯수</span>
-      <select id="ff-rooms">
-        <option value="0">전체</option>
-        <option value="10">10실↑</option>
-        <option value="20">20실↑</option>
-        <option value="30">30실↑</option>
-        <option value="40">40실↑</option>
-        <option value="50">50실↑</option>
-      </select>
+      <div class="rf-row" id="rf-rooms"></div>
+    </div>
+    <div class="fg-h" id="ff-price-wrap" style="display:none"><span class="fl-h">매매가</span>
+      <div class="rf-row" id="rf-price"></div>
+    </div>
+    <div class="fg-h" id="ff-total-wrap" style="display:none"><span class="fl-h">합금액</span>
+      <div class="rf-row" id="rf-total"></div>
     </div>
   </div>
   <div class="badge" id="total-badge">0건</div>
@@ -1495,9 +1489,9 @@ function updatePinFontSize(){
     el.querySelectorAll('.pin-tot-line').forEach(e=>e.style.fontSize=fs+'px');
     el.querySelectorAll('.pin-tot').forEach(e=>e.style.fontSize=fs+'px');
     el.querySelectorAll('span[style*="opacity"]').forEach(e=>e.style.fontSize=fs2+'px');
-    el.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(fs*0.75))+'px');
     el.querySelectorAll('.pin-gstype').forEach(e=>e.style.fontSize=Math.max(6,Math.round(fs*0.65))+'px');
   });
+  document.querySelectorAll('.pin-kind-tag').forEach(e=>e.style.fontSize=Math.max(7,Math.round(fs*0.75))+'px');
   if(!currentUser){
     var _lv2=lv,_cr2=Math.max(30,Math.min(160,Math.round(80*Math.pow(1.35,4-_lv2))));
     var _ch2=Math.max(12,Math.round(_cr2*0.4)),_cg2=Math.max(10,Math.round(_cr2*0.6));
@@ -1843,7 +1837,80 @@ function toggleGsType(prefix){
   const row=document.getElementById(prefix==='l'?'l-gstype-row':'el-gstype-row');
   if(row)row.style.display=type==='고시원'?'':'none';
 }
-function getF(){return{type:document.getElementById('ff-type').value,deal:document.getElementById('ff-deal').value,prov:document.getElementById('ff-prov').value,area:document.getElementById('ff-area').value,dong:document.getElementById('ff-dong').value,price:parseFloat(document.getElementById('ff-price').value),period:parseInt(document.getElementById('ff-period').value)||0,rooms:parseInt(document.getElementById('ff-rooms').value)||0,gsTypes:getGsTypeFilter()};}
+// ════════════════════════════════════════════
+// 범위 필터 (한줄 칩 — 1개 선택=이상, 2개 선택=범위)
+// ════════════════════════════════════════════
+var rfCfg={
+  rooms:{vals:[0,5,10,15,20,25,30,40,50,60,80,100],labels:['전체','5','10','15','20','25','30','40','50','60','80','100']},
+  price:{vals:[0,5000,10000,15000,20000,30000,50000,80000,100000],labels:['전체','5천','1억','1.5억','2억','3억','5억','8억','10억']},
+  total:{vals:[0,5000,10000,15000,20000,30000,50000,80000,100000],labels:['전체','5천','1억','1.5억','2억','3억','5억','8억','10억']}
+};
+var rfSel={rooms:[],price:[],total:[]};
+function initRfChips(){
+  Object.keys(rfCfg).forEach(function(key){
+    var row=document.getElementById('rf-'+key);
+    if(!row)return;
+    row.innerHTML='';
+    rfCfg[key].vals.forEach(function(v,i){
+      var c=document.createElement('span');
+      c.className='rf-chip';c.textContent=rfCfg[key].labels[i];
+      c.setAttribute('data-v',v);
+      c.addEventListener('click',function(){rfClick(key,v);});
+      row.appendChild(c);
+    });
+  });
+}
+function rfClick(key,val){
+  if(val===0){rfSel[key]=[];} // 전체 클릭 → 리셋
+  else{
+    var idx=rfSel[key].indexOf(val);
+    if(idx>=0){rfSel[key].splice(idx,1);} // 이미 선택된 칩 → 해제
+    else if(rfSel[key].length<2){rfSel[key].push(val);rfSel[key].sort(function(a,b){return a-b;});}
+    else{rfSel[key]=[val];} // 이미 2개면 새로 시작
+  }
+  rfUpdateUI(key);
+  onFilterChange();
+}
+function rfUpdateUI(key){
+  var row=document.getElementById('rf-'+key);
+  if(!row)return;
+  var chips=row.querySelectorAll('.rf-chip');
+  var s=rfSel[key];
+  chips.forEach(function(c){
+    var v=parseInt(c.getAttribute('data-v'));
+    c.classList.remove('sel','in');
+    if(v===0&&s.length===0){c.classList.add('sel');return;}
+    if(s.indexOf(v)>=0){c.classList.add('sel');return;}
+    if(v>0&&s.length===2&&v>s[0]&&v<s[1]){c.classList.add('in');}
+    if(v>0&&s.length===1&&v>s[0]){c.classList.add('in');}
+  });
+}
+function rfGetRange(key){
+  var s=rfSel[key];
+  if(!s||!s.length)return{min:0,max:0};
+  if(s.length===1)return{min:s[0],max:0}; // 이상
+  return{min:s[0],max:s[1]}; // 범위
+}
+function updateDealFilters(){
+  var deal=document.getElementById('ff-deal').value;
+  var priceW=document.getElementById('ff-price-wrap');
+  var totalW=document.getElementById('ff-total-wrap');
+  if(deal==='매매'){
+    if(priceW)priceW.style.display='';
+    if(totalW)totalW.style.display='none';
+  }else if(deal==='월세'){
+    if(priceW)priceW.style.display='none';
+    if(totalW)totalW.style.display='';
+  }else{
+    if(priceW)priceW.style.display='none';
+    if(totalW)totalW.style.display='none';
+  }
+}
+initRfChips();
+rfUpdateUI('rooms');rfUpdateUI('price');rfUpdateUI('total');
+updateDealFilters();
+
+function getF(){var r=rfGetRange('rooms'),pr=rfGetRange('price'),tot=rfGetRange('total');return{type:document.getElementById('ff-type').value,deal:document.getElementById('ff-deal').value,prov:document.getElementById('ff-prov').value,area:document.getElementById('ff-area').value,dong:document.getElementById('ff-dong').value,period:parseInt(document.getElementById('ff-period').value)||0,gsTypes:getGsTypeFilter(),roomsMin:r.min,roomsMax:r.max,priceMin:pr.min,priceMax:pr.max,totalMin:tot.min,totalMax:tot.max};}
 function filtered(){
   const f=getF();
   const now=Date.now();
@@ -1859,14 +1926,22 @@ function filtered(){
       const reg=item.registeredAt||0;
       if(now-reg > f.period*24*60*60*1000)return false;
     }
-    // 방 갯수 필터
-    if(f.rooms>0&&(item.rooms||0)<f.rooms)return false;
-    // 금액 필터: 월세는 합계금액(보증금+권리금), 매매는 매매금액 기준
-    const isRent=item.deal==='월세';
-    let priceVal;
-    if(isRent){priceVal=((item.deposit||0)+(item.keymoney||0))/10000;}
-    else{priceVal=(item.price||0)/10000;}
-    if(priceVal>f.price)return false;
+    // 방 갯수 범위 필터
+    const rooms=item.rooms||0;
+    if(f.roomsMin>0&&rooms<f.roomsMin)return false;
+    if(f.roomsMax>0&&rooms>f.roomsMax)return false;
+    // 매매가 범위 필터
+    if(item.deal==='매매'){
+      const pv=item.price||0;
+      if(f.priceMin>0&&pv<f.priceMin)return false;
+      if(f.priceMax>0&&pv>f.priceMax)return false;
+    }
+    // 합금액 필터 (임대: 보증금+권리금)
+    if(item.deal==='월세'){
+      const tot=(item.deposit||0)+(item.keymoney||0);
+      if(f.totalMin>0&&tot<f.totalMin)return false;
+      if(f.totalMax>0&&tot>f.totalMax)return false;
+    }
     return true;
   });
 }
@@ -2241,11 +2316,12 @@ function render(){
         clusterFilterIds=null;
         render();showPopup(item);
         c.scrollIntoView({behavior:'smooth',block:'nearest'});
+        const zoomLv=currentUser?4:5;
         if(item.lat&&item.lng){
-          kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
+          kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
         } else {
           getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{
-            kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
+            kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
           },item.lid,item.jibun);
         }
       });
@@ -2379,12 +2455,12 @@ function renderPins(coordMap){
       let content;
       if(currentUser){
         // 로그인: 버블을 absolute로 분리 → wrapper 높이 = 삼각형+점(21px) 고정 → yAnchor:1.0 앵커 흔들림 없음
-        content=`<div style="position:relative;display:inline-block;text-align:center"><div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:absolute;bottom:21px;left:50%;transform:translateX(-50%);white-space:nowrap;cursor:pointer"><div class="cpin-bub ${pc}" style="font-size:${_fs}px">${tagHtml}${lbl}</div></div><div style="display:flex;flex-direction:column;align-items:center;pointer-events:none"><div style="width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:14px solid ${solidColor};filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))"></div><div style="width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px ${solidColor};margin-top:1px"></div></div></div>`;
+        content=`<div style="position:relative;display:inline-block;text-align:center"><div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:absolute;bottom:21px;left:50%;transform:translateX(-50%);white-space:nowrap;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center">${tagHtml}<div class="cpin-bub ${pc}" style="font-size:${_fs}px">${lbl}</div></div><div style="display:flex;flex-direction:column;align-items:center;pointer-events:none"><div style="width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:14px solid ${solidColor};filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))"></div><div style="width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px ${solidColor};margin-top:1px"></div></div></div>`;
       } else {
         const _cr=Math.max(30,Math.min(160,Math.round(80*Math.pow(1.35,4-_lv))));
         const _ch=Math.max(12,Math.round(_cr*0.4));
         const _cg=Math.max(10,Math.round(_cr*0.6));
-        content=`<div style="display:inline-flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer"><div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:visible;background:transparent;display:inline-block"><div class="cpin-bub ${pc}" style="font-size:${_fs}px">${tagHtml}${lbl}</div></div><div class="range-circle" data-color="${dotColor}" style="width:${_cr}px;height:${_ch}px;border-radius:50%;background:${dotColor};box-shadow:0 0 ${_cg*2}px ${_cg}px ${dotColor};margin-top:1px;pointer-events:none"></div></div>`;
+        content=`<div style="display:inline-flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer"><div class="cpin${activeId===item.lid?' active':''}" id="pin-${item.lid}" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;overflow:visible;background:transparent;display:inline-flex;flex-direction:column;align-items:center">${tagHtml}<div class="cpin-bub ${pc}" style="font-size:${_fs}px">${lbl}</div></div><div class="range-circle" data-color="${dotColor}" style="width:${_cr}px;height:${_ch}px;border-radius:50%;background:${dotColor};box-shadow:0 0 ${_cg*2}px ${_cg}px ${dotColor};margin-top:1px;pointer-events:none"></div></div>`;
       }
       // yAnchor: 로그인(삼각형 포인터) 1.0, 비로그인(범위원) 1.0
       const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content,xAnchor:0.5,yAnchor:1.0,zIndex:activeId===item.lid?20:10});
@@ -2566,7 +2642,8 @@ function renderFavList(){
       <div class="cmeta"><span>📍 ${currentUser?fullAddr(item):maskAddr(item)}</span><span>🚪 ${item.rooms||'-'}실</span></div>`;
     c.addEventListener('click',()=>{
       activeId=item.lid;activePopupItem=item;render();showPopup(item);
-      if(item.lat&&item.lng){kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));}else{getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));},item.lid,item.jibun);}
+      const zoomLv=currentUser?4:5;
+      if(item.lat&&item.lng){kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));}else{getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));},item.lid,item.jibun);}
     });
     el.appendChild(c);
   });
@@ -2740,11 +2817,13 @@ function closePopupSilent(){
   document.getElementById('dpop').classList.remove('show');
 }
 
-['ff-type','ff-deal','ff-price','ff-period','ff-rooms'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
+function onFilterChange(){
   updateGsTypeFilterVisibility();
+  updateDealFilters();
   activeId=null;clusterFilterIds=null;mapBoundsFilter=false;closePopupSilent();render();if(currentView==='board')renderBoard();
   saveFilters();
-}));
+}
+['ff-type','ff-deal','ff-period'].forEach(id=>document.getElementById(id).addEventListener('change',onFilterChange));
 document.getElementById('ff-gs-all').addEventListener('change',()=>{
   ['ff-gs-1','ff-gs-2','ff-gs-3'].forEach(id=>{const cb=document.getElementById(id);if(cb)cb.checked=false;});
   document.getElementById('ff-gs-all').checked=true;
@@ -3621,7 +3700,7 @@ function renderAListings(){
         <th style="width:70px">
           거래
           <select id="alf-deal" style="${selStyle}" onchange="renderAListings()">
-            ${['전체','매매','월세'].map(v=>`<option${v===fDeal?' selected':''}>` + `${v}</option>`).join('')}
+            ${['전체','매매','월세'].map(v=>`<option value="${v}"${v===fDeal?' selected':''}>${v==='월세'?'임대':v}</option>`).join('')}
           </select>
         </th>
         <th>매물명</th>
@@ -5091,11 +5170,12 @@ function checkUrlLid(){
       setTimeout(()=>{
         activeId=lid;activePopupItem=item;render();showPopup(item);
         if(kakaoMap){
+          const zoomLv=currentUser?4:5;
           if(item.lat&&item.lng){
-            kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
+            kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
           } else {
             getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{
-              kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
+              kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
             },item.lid,item.jibun);
           }
         }
@@ -5479,7 +5559,7 @@ function saveProfilePw(){
 // ════════════════════════════════════════════
 // 필터 localStorage 저장/복원
 // ════════════════════════════════════════════
-const FILTER_IDS=['ff-type','ff-deal','ff-price','ff-period','ff-rooms','ff-prov','ff-area','ff-dong'];
+const FILTER_IDS=['ff-type','ff-deal','ff-period','ff-prov','ff-area','ff-dong'];
 const FILTER_CB_IDS=['ff-gs-all','ff-gs-1','ff-gs-2','ff-gs-3'];
 
 function saveFilters(){
@@ -5488,6 +5568,7 @@ function saveFilters(){
   var cbs={};
   FILTER_CB_IDS.forEach(function(id){var el=document.getElementById(id);if(el)cbs[id]=el.checked;});
   f['_cbs']=cbs;
+  f['_rfSel']=JSON.parse(JSON.stringify(rfSel));
   try{localStorage.setItem('savedFilters',JSON.stringify(f));}catch(e){}
 }
 
@@ -5509,7 +5590,14 @@ function loadFilters(){
         if(el&&f['_cbs'][id]!==undefined)el.checked=f['_cbs'][id];
       });
     }
+    if(f['_rfSel']){
+      Object.keys(f['_rfSel']).forEach(function(k){
+        if(rfSel[k]!==undefined)rfSel[k]=f['_rfSel'][k];
+        rfUpdateUI(k);
+      });
+    }
     updateGsTypeFilterVisibility();
+    updateDealFilters();
   }catch(e){}
 }
 
