@@ -5230,7 +5230,12 @@ function checkUrlLid(){
     if(!lid)return;
     const item=buildAll().find(i=>i.lid===lid);
     if(item){
-      setTimeout(()=>{
+      // 지도 준비될 때까지 대기 후 이동
+      var _urlTry=0;
+      var _urlWait=setInterval(()=>{
+        _urlTry++;
+        if(!kakaoMap && _urlTry<20)return; // 최대 4초 대기
+        clearInterval(_urlWait);
         activeId=lid;activePopupItem=item;render();showPopup(item);
         if(kakaoMap){
           const zoomLv=currentUser?4:5;
@@ -5238,11 +5243,18 @@ function checkUrlLid(){
             kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
           } else {
             getLatLng(item.prov,item.area,item.dong,(lat,lng)=>{
+              if(!kakaoMap)return;
               kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(lat,lng));
             },item.lid,item.jibun);
           }
+          // 핀 렌더링 완료 후 다시 이동 (좌표 프리패치 완료 대비)
+          setTimeout(()=>{
+            if(kakaoMap&&item.lat&&item.lng){
+              kakaoMap.setLevel(zoomLv);kakaoMap.panTo(new kakao.maps.LatLng(item.lat,item.lng));
+            }
+          },2000);
         }
-      },300);
+      },200);
     }
   }catch(e){}
 }
