@@ -177,9 +177,14 @@ select:hover,select:focus{border-color:var(--accent)}
 .hbtn:hover{border-color:var(--accent);color:var(--accent)}
 .hbtn.accent{background:rgba(79,140,255,.12);border-color:var(--accent);color:var(--accent)}
 .hbtn.accent:hover{background:rgba(79,140,255,.22)}
-/* 범위 필터 (한줄 칩) */
-.rf-row{display:flex;gap:2px;align-items:center}
-.rf-chip{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
+/* 범위 필터 (드롭다운+칩) */
+.rf-wrap{position:relative}
+.rf-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 9px;font-size:12px;font-family:inherit;cursor:pointer;outline:none;transition:border-color .2s;white-space:nowrap}
+.rf-btn:hover,.rf-btn.open{border-color:var(--accent)}
+.rf-panel{display:none;position:fixed;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:99999;padding:10px 12px}
+.rf-panel.show{display:block}
+.rf-row{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.rf-chip{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
 .rf-chip:hover{border-color:var(--accent);color:var(--accent)}
 .rf-chip.sel{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
 .rf-chip.in{background:rgba(79,140,255,.18);color:var(--accent);border-color:var(--accent)}
@@ -398,6 +403,7 @@ select:hover,select:focus{border-color:var(--accent)}
   select{font-size:11px;padding:4px 6px}
   .huser{margin-left:auto}
   .hbtn{padding:4px 10px;font-size:11px}
+  .rf-btn{font-size:11px;padding:4px 6px}
   .rf-chip{padding:2px 5px;font-size:9px}
   .uchip{font-size:11px;padding:3px 8px 3px 6px}
   .main{flex-direction:column}
@@ -992,13 +998,22 @@ select:hover,select:focus{border-color:var(--accent)}
       <select id="ff-dong"><option value="all">전체</option></select>
     </div>
     <div class="fg-h"><span class="fl-h">방 갯수</span>
-      <div class="rf-row" id="rf-rooms"></div>
+      <div class="rf-wrap">
+        <button class="rf-btn" id="rf-rooms-btn" onclick="rfToggle('rooms')">전체 ▼</button>
+        <div class="rf-panel" id="rf-rooms-panel"><div class="rf-row" id="rf-rooms"></div></div>
+      </div>
     </div>
     <div class="fg-h" id="ff-price-wrap" style="display:none"><span class="fl-h">매매가</span>
-      <div class="rf-row" id="rf-price"></div>
+      <div class="rf-wrap">
+        <button class="rf-btn" id="rf-price-btn" onclick="rfToggle('price')">전체 ▼</button>
+        <div class="rf-panel" id="rf-price-panel"><div class="rf-row" id="rf-price"></div></div>
+      </div>
     </div>
     <div class="fg-h" id="ff-total-wrap" style="display:none"><span class="fl-h">합금액</span>
-      <div class="rf-row" id="rf-total"></div>
+      <div class="rf-wrap">
+        <button class="rf-btn" id="rf-total-btn" onclick="rfToggle('total')">전체 ▼</button>
+        <div class="rf-panel" id="rf-total-panel"><div class="rf-row" id="rf-total"></div></div>
+      </div>
     </div>
   </div>
   <div class="badge" id="total-badge">0건</div>
@@ -1869,6 +1884,7 @@ function rfClick(key,val){
     else{rfSel[key]=[val];} // 이미 2개면 새로 시작
   }
   rfUpdateUI(key);
+  rfBtnText(key);
   onFilterChange();
 }
 function rfUpdateUI(key){
@@ -1906,6 +1922,42 @@ function updateDealFilters(){
     if(totalW)totalW.style.display='none';
   }
 }
+function rfToggle(key){
+  var panel=document.getElementById('rf-'+key+'-panel');
+  var btn=document.getElementById('rf-'+key+'-btn');
+  if(!panel)return;
+  var wasOpen=panel.classList.contains('show');
+  // 다른 패널 닫기
+  document.querySelectorAll('.rf-panel.show').forEach(function(p){p.classList.remove('show');});
+  document.querySelectorAll('.rf-btn.open').forEach(function(b){b.classList.remove('open');});
+  if(!wasOpen){
+    var rect=btn.getBoundingClientRect();
+    panel.style.top=(rect.bottom+4)+'px';
+    var left=rect.left;
+    // 패널 표시 후 실제 너비로 넘침 방지
+    panel.classList.add('show');
+    var pw=panel.offsetWidth;
+    if(left+pw>window.innerWidth)left=window.innerWidth-pw-8;
+    if(left<4)left=4;
+    panel.style.left=left+'px';
+    btn.classList.add('open');
+  }
+}
+function rfBtnText(key){
+  var btn=document.getElementById('rf-'+key+'-btn');
+  if(!btn)return;
+  var s=rfSel[key],cfg=rfCfg[key];
+  if(!s||!s.length){btn.textContent='전체 ▼';return;}
+  var lbl=function(v){var i=cfg.vals.indexOf(v);return i>=0?cfg.labels[i]:v;};
+  if(s.length===1)btn.textContent=lbl(s[0])+'~ ▼';
+  else btn.textContent=lbl(s[0])+'~'+lbl(s[1])+' ▼';
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.rf-wrap')){
+    document.querySelectorAll('.rf-panel.show').forEach(function(p){p.classList.remove('show');});
+    document.querySelectorAll('.rf-btn.open').forEach(function(b){b.classList.remove('open');});
+  }
+});
 initRfChips();
 rfUpdateUI('rooms');rfUpdateUI('price');rfUpdateUI('total');
 updateDealFilters();
