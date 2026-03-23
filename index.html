@@ -1918,8 +1918,8 @@ function updateDealFilters(){
     if(priceW)priceW.style.display='none';
     if(totalW)totalW.style.display='';
   }else{
-    if(priceW)priceW.style.display='none';
-    if(totalW)totalW.style.display='none';
+    if(priceW)priceW.style.display='';
+    if(totalW)totalW.style.display='';
   }
 }
 function rfToggle(key){
@@ -1982,14 +1982,14 @@ function filtered(){
     const rooms=item.rooms||0;
     if(f.roomsMin>0&&rooms<f.roomsMin)return false;
     if(f.roomsMax>0&&rooms>f.roomsMax)return false;
-    // 매매가 범위 필터
-    if(item.deal==='매매'){
+    // 매매가 범위 필터 (매매 매물에 적용)
+    if(item.deal==='매매'&&(f.priceMin>0||f.priceMax>0)){
       const pv=item.price||0;
       if(f.priceMin>0&&pv<f.priceMin)return false;
       if(f.priceMax>0&&pv>f.priceMax)return false;
     }
-    // 합금액 필터 (임대: 보증금+권리금)
-    if(item.deal==='월세'){
+    // 합금액 필터 (월세 매물에 적용: 보증금+권리금)
+    if(item.deal==='월세'&&(f.totalMin>0||f.totalMax>0)){
       const tot=(item.deposit||0)+(item.keymoney||0);
       if(f.totalMin>0&&tot<f.totalMin)return false;
       if(f.totalMax>0&&tot>f.totalMax)return false;
